@@ -23,6 +23,16 @@ Every phase must include:
 - manual verification
 - at least lightweight programmatic validation where appropriate
 
+## Approval Gate Testing Rule
+
+A phase is not considered complete until:
+1. the implementation for that phase is finished
+2. the corresponding manual verification steps have been provided
+3. the relevant tests for that phase have been checked
+4. the user has reviewed the check-in and explicitly approved moving forward
+
+Passing tests alone does not allow automatic progression to the next phase.
+
 ---
 
 ## 2. Global Quality Standards

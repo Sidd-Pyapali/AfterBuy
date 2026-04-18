@@ -435,7 +435,30 @@ Honesty and clarity matter.
 
 ---
 
-## 21. Final Principle
+## 21. Mandatory Check-In and Approval Gate
+
+After each phase, you must stop and wait for explicit user approval before moving to the next phase.
+
+You must not begin a new phase automatically.
+
+At the end of every phase, provide a structured check-in with:
+1. summary of what was built
+2. files added or modified
+3. any required environment variables
+4. exact commands to run locally
+5. manual verification steps
+6. whether the phase exit criteria in TASKS.md are fully satisfied
+7. any known limitations or blockers
+
+If any task in the current phase is incomplete, say so explicitly and do not claim the phase is done.
+
+If the current phase passes, ask for approval to proceed.
+
+Never continue from Phase N to Phase N+1 without explicit user confirmation.
+
+---
+
+## 22. Final Principle
 
 If there is ever a conflict between:
 - building more features

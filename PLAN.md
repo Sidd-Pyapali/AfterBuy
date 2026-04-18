@@ -618,8 +618,8 @@ Optional eBay publish
 ## Phase 8
 Stretch dashboard and polish
 
-Phases must be completed in order.
-Claude must not skip ahead unless explicitly instructed.
+### Phase Progression Rule
+Each phase must be completed, checked against TASKS.md and TESTS.md, and explicitly approved by the user before the next phase begins.
 
 ---
 

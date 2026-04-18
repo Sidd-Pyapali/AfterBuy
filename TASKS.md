@@ -21,6 +21,20 @@ These rules are mandatory.
 11. No additional marketplace posting beyond the stated scope unless explicitly approved.
 12. No unnecessary package additions.
 
+### Mandatory Approval Gate
+At the end of each phase, stop implementation and wait for explicit user approval before starting the next phase.
+
+For every phase completion message, include:
+- phase name and number
+- completed tasks
+- files changed
+- commands to run
+- manual verification steps
+- gate status: pass or fail
+- any blockers, risks, or incomplete items
+
+Do not start the next phase unless the user explicitly says to continue.
+
 ---
 
 ## 2. Development Standards
