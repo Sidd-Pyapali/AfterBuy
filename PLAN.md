@@ -112,11 +112,11 @@ A user can:
 2. upload a photo of an item they own
 3. have the system identify the item using OpenAI
 4. see extracted attributes such as category, brand, title guess, color, condition
-5. have the system fetch comparable listings from eBay
+5. have the system fetch comparable listings from a market data provider
 6. see a valuation range and suggested listing price
 7. generate a resale listing with title and description
 8. copy or export the generated listing
-9. optionally publish to eBay if implemented successfully
+9. optionally publish to a supported marketplace if implemented successfully
 
 ### MVP Success Standard
 The MVP is successful if one golden path works smoothly and convincingly from beginning to end.
@@ -146,11 +146,11 @@ Why:
 - structured metadata extraction
 - Supabase image storage
 - Supabase persistence
-- eBay comparable search
+- market comparable search using a provider such as SerpApi
 - basic valuation engine using comparables and heuristics
 - listing generation with OpenAI
 - mobile-first frontend
-- optional eBay publish flow
+- optional marketplace publish flow
 - optional internal listing status view
 
 ## Explicitly Out of Scope for First Pass
@@ -175,7 +175,7 @@ Why:
 ## Stretch Goals Only If Core Flow Is Done
 - inventory gallery page
 - listing management dashboard
-- eBay publish
+- Marketplace publish
 - valuation confidence explanations
 - history of valuation snapshots
 - export package formats for more marketplaces
@@ -238,7 +238,7 @@ The system consists of:
 - a FastAPI backend
 - Supabase for database and image storage
 - OpenAI for vision extraction and listing generation
-- eBay Browse API for comparable item data
+- SerpApi for comparable market item data
 
 ## Frontend Responsibilities
 - render landing page
@@ -257,12 +257,12 @@ The system consists of:
 - store item row in database
 - call OpenAI for extraction
 - normalize extracted fields
-- call eBay for comparables
+- call the market data provider for comparables
 - normalize comp records
 - compute valuation range
 - call OpenAI to generate listing copy
 - persist valuation and listing records
-- optionally publish to eBay
+- optionally publish to a supported marketplace
 
 ## Persistence Responsibilities
 Supabase should store:
@@ -273,6 +273,12 @@ Supabase should store:
 - valuation results
 - generated listing outputs
 - optional publish statuses
+
+## Environment Configuration
+Runtime environment files are split by app:
+- `frontend/.env.local` for public-safe frontend variables
+- `backend/.env` for backend secrets
+- root `.env.example` serves as the project template
 
 ---
 
@@ -345,7 +351,7 @@ Suggested fields:
 - generation_reasoning
 
 ## listing_publications
-Optional if eBay publish is implemented.
+Optional if marketplace publish is implemented.
 
 Suggested fields:
 - id
@@ -384,7 +390,7 @@ Output:
 
 ### POST /find-comps
 Purpose:
-Use extracted metadata to query eBay for comparable listings.
+Use extracted metadata to query a market data provider for comparable listings.
 
 Input:
 - item_id or extracted metadata payload
@@ -430,9 +436,9 @@ Output:
 - generated listing
 - optional publication info
 
-### Optional: POST /publish/ebay
+### Optional: POST /publish/marketplace
 Purpose:
-Create/publish a listing to eBay.
+Create/publish a listing to a supported marketplace.
 
 Input:
 - item_id or generated listing payload
@@ -454,7 +460,7 @@ Prefer simple, robust heuristics over fake sophistication.
 
 ## Inputs
 - extracted item metadata
-- eBay comparable listings
+- comparable market listings
 - condition estimate
 - optional user-supplied purchase context
 
@@ -601,7 +607,7 @@ Supabase setup and persistence foundation
 Upload and extraction flow
 
 ## Phase 3
-eBay comparable search
+Market comparable search
 
 ## Phase 4
 Valuation engine
@@ -613,7 +619,7 @@ Listing generation
 Result page assembly
 
 ## Phase 7
-Optional eBay publish
+Optional marketplace publish
 
 ## Phase 8
 Stretch dashboard and polish
@@ -629,7 +635,7 @@ Each phase must be completed, checked against TASKS.md and TESTS.md, and explici
 Mitigation:
 Use structured outputs and conservative prompts.
 
-## Risk: eBay comps are noisy
+## Risk: market comps are noisy
 Mitigation:
 Normalize and filter aggressively.
 Use confidence scoring.
@@ -662,7 +668,7 @@ The project is acceptable for demo if:
 - no critical crash occurs on the golden path
 
 The project is excellent if:
-- optional eBay publish also works
+- optional marketplace publish also works
 - there is a simple inventory or listing status page
 - the demo feels smooth and premium
 

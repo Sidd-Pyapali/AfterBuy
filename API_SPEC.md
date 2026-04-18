@@ -11,7 +11,7 @@ The goal of the API is to support one clean end-to-end user flow:
 3. Fetch comparable listings
 4. Compute valuation
 5. Generate marketplace-ready listing
-6. Optionally publish to eBay
+6. Optionally publish to a supported marketplace
 7. Retrieve full assembled item state for rendering
 
 This API spec is written for implementation clarity, frontend-backend coordination, and Claude Code guidance.
@@ -103,7 +103,7 @@ The frontend mainly cares about:
 
 ### Optional Endpoints
 - `POST /process-item`
-- `POST /publish/ebay`
+- `POST /publish/marketplace`
 - `GET /items`
 - `GET /health`
 
@@ -146,7 +146,7 @@ No body.
     "api": "ok",
     "supabase": "unknown",
     "openai": "unknown",
-    "ebay": "unknown"
+    "market_data_provider": "unknown"
   }
 }
 ```
@@ -277,13 +277,13 @@ Form-data:
 - If extraction is partially uncertain, still return best-effort fields with lower confidence
 - Do not fail just because brand is unknown
 
-## 7. Comparable Listing Search
+## 7. Market Comparable Search
 
 ### 7.1 `POST /find-comps`
 
 #### Purpose
 
-Search eBay for comparable listings using extracted item metadata.
+Search a market data provider for comparable listings using extracted item metadata.
 
 #### Request Body
 
@@ -319,27 +319,27 @@ Use `item_id` and let backend load metadata from DB.
   "search_strategy": {
     "primary_query": "The North Face black puffer jacket",
     "fallback_query": "The North Face outerwear puffer jacket",
-    "source": "ebay"
+    "source": "serpapi"
   },
   "comps": [
     {
       "id": "comp_1",
-      "source": "ebay",
+      "source": "serpapi",
       "title": "The North Face black puffer jacket mens medium",
       "price": 89.99,
       "currency": "USD",
-      "url": "https://www.ebay.com/itm/123456",
+      "url": "https://example.com/products/comp1",
       "image_url": "https://example.com/comp1.jpg",
       "condition": "Pre-owned",
       "similarity_score": 0.91
     },
     {
       "id": "comp_2",
-      "source": "ebay",
+      "source": "serpapi",
       "title": "North Face black quilted jacket",
       "price": 74.00,
       "currency": "USD",
-      "url": "https://www.ebay.com/itm/123457",
+      "url": "https://example.com/products/comp2",
       "image_url": "https://example.com/comp2.jpg",
       "condition": "Used",
       "similarity_score": 0.78
@@ -363,7 +363,7 @@ Use `item_id` and let backend load metadata from DB.
 }
 ```
 
-##### eBay failure
+##### Market data provider failure
 
 ```json
 {
@@ -371,7 +371,7 @@ Use `item_id` and let backend load metadata from DB.
     "code": "MARKETPLACE_FETCH_FAILED",
     "message": "Unable to retrieve comparable listings at this time.",
     "details": {
-      "source": "ebay"
+      "source": "serpapi"
     }
   }
 }
@@ -387,7 +387,7 @@ This should not be treated as an error if the item exists but no comps are found
   "search_strategy": {
     "primary_query": "The North Face black puffer jacket",
     "fallback_query": "The North Face outerwear puffer jacket",
-    "source": "ebay"
+    "source": "serpapi"
   },
   "comps": [],
   "comp_count": 0,
@@ -401,7 +401,7 @@ This should not be treated as an error if the item exists but no comps are found
 
 - Persist normalized comps to DB
 - Keep raw result JSON internally if needed for debugging
-- Do not return raw eBay payload directly to frontend
+- Do not return raw provider payload directly to frontend
 - Similarity score can be heuristic and backend-generated
 
 ## 8. Valuation Endpoint
@@ -432,7 +432,7 @@ Compute a valuation range and suggested listing price using comps and extracted 
     "estimated_high": 95.0,
     "suggested_listing_price": 84.0,
     "confidence": "medium",
-    "valuation_reason": "Based on 5 comparable eBay listings with moderate title and brand similarity.",
+    "valuation_reason": "Based on 5 comparable market listings with moderate title and brand similarity.",
     "valuation_method": "comp_weighted_heuristic",
     "comp_count": 5
   }
@@ -510,7 +510,7 @@ Generate a marketplace-ready title and description using extracted metadata and 
 #### Supported Platforms for MVP
 
 - `generic`
-- `ebay`
+- `marketplace`
 
 Platform-specific generation can be shallow at first.  
 Do not overfit listing copy to many marketplace differences for the MVP.
@@ -616,11 +616,11 @@ Return all relevant data needed to render the final item result page.
   "comps": [
     {
       "id": "comp_1",
-      "source": "ebay",
+      "source": "serpapi",
       "title": "The North Face black puffer jacket mens medium",
       "price": 89.99,
       "currency": "USD",
-      "url": "https://www.ebay.com/itm/123456",
+      "url": "https://example.com/products/comp1",
       "image_url": "https://example.com/comp1.jpg",
       "condition": "Pre-owned",
       "similarity_score": 0.91
@@ -633,7 +633,7 @@ Return all relevant data needed to render the final item result page.
     "estimated_high": 95.0,
     "suggested_listing_price": 84.0,
     "confidence": "medium",
-    "valuation_reason": "Based on 5 comparable eBay listings with moderate title and brand similarity.",
+    "valuation_reason": "Based on 5 comparable market listings with moderate title and brand similarity.",
     "valuation_method": "comp_weighted_heuristic",
     "comp_count": 5
   },
@@ -723,13 +723,13 @@ Use standard error format.
 - If implemented, it should internally call the same service layers as the individual endpoints
 - Do not duplicate business logic
 
-## 12. eBay Publish Endpoint (Optional Stretch)
+## 12. Marketplace Publish Endpoint (Optional Stretch)
 
-### 12.1 `POST /publish/ebay`
+### 12.1 `POST /publish/marketplace`
 
 #### Purpose
 
-Publish a generated listing to eBay if the publish flow is implemented.
+Publish a generated listing to a supported marketplace if the publish flow is implemented.
 
 #### Request Body
 
@@ -746,10 +746,10 @@ Publish a generated listing to eBay if the publish flow is implemented.
   "item_id": "item_123",
   "publication": {
     "id": "pub_123",
-    "platform": "ebay",
+    "platform": "marketplace",
     "publication_status": "published",
-    "external_listing_id": "ebay_listing_123",
-    "external_listing_url": "https://www.ebay.com/itm/1234567890"
+    "external_listing_id": "listing_123",
+    "external_listing_url": "https://www.example.com/listings/1234567890"
   }
 }
 ```
@@ -763,7 +763,7 @@ If only a mock publish flow is available, it must be clearly labeled:
   "item_id": "item_123",
   "publication": {
     "id": "pub_123",
-    "platform": "ebay",
+    "platform": "marketplace",
     "publication_status": "mock_published",
     "external_listing_id": null,
     "external_listing_url": null
@@ -780,7 +780,7 @@ If only a mock publish flow is available, it must be clearly labeled:
 {
   "error": {
     "code": "PUBLISH_FAILED",
-    "message": "Unable to publish this listing to eBay.",
+    "message": "Unable to publish this listing to the selected marketplace.",
     "details": {}
   }
 }
@@ -790,7 +790,7 @@ If only a mock publish flow is available, it must be clearly labeled:
 
 - This endpoint is optional
 - Do not implement this before the core flow is complete
-- Real publish should only be attempted if credentials and eBay requirements are ready
+- Real publish should only be attempted if marketplace credentials and provider requirements are ready
 - Never pretend a real publish happened if it did not
 
 ## 13. Inventory Listing Endpoint (Optional Stretch)
@@ -861,14 +861,13 @@ Responsibilities:
 - item persistence
 - reading/writing assembled item state
 
-### `ebay_service`
+### `market_data_service`
 
 Responsibilities:
-
-- eBay auth if needed
-- search query construction
-- comp retrieval
-- normalization
+- provider request construction
+- market comparable retrieval
+- result normalization
+- provider-specific error handling
 
 ### `valuation_service`
 
@@ -891,7 +890,7 @@ Responsibilities:
 
 Responsibilities:
 
-- optional eBay publish flow
+- optional marketplace publish flow
 - publication persistence
 
 These boundaries are not directly exposed to the frontend, but they should shape implementation.
@@ -944,7 +943,7 @@ Support stepwise logic internally if useful, but expose a smooth orchestrated fl
 
 - frontend must never receive secret keys
 - OpenAI key remains backend-only
-- eBay credentials remain backend-only
+- market data provider and marketplace credentials remain backend-only
 - Supabase service key remains backend-only
 - only safe public config goes to frontend env
 
@@ -991,7 +990,7 @@ If time is limited, prioritize the following endpoints in this order:
 5. `POST /generate-listing`
 6. `GET /item/{item_id}`
 7. `POST /process-item`
-8. `POST /publish/ebay`
+8. `POST /publish/marketplace`
 9. `GET /items`
 
 The app is viable without the last three.  

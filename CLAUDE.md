@@ -7,10 +7,10 @@ You are helping build AfterBuy, a hackathon MVP for the Autonomous Agents track.
 AfterBuy is a mobile-first AI ownership agent that:
 - accepts a photo of an owned item
 - identifies the item using OpenAI
-- fetches comparable listings from eBay
+- fetches comparable market listings from a market data provider
 - estimates resale value
 - generates a marketplace-ready listing
-- optionally publishes to eBay
+- optionally publishes to a supported marketplace
 
 Your job is to implement this product in tightly scoped phases without going outside the defined product and engineering boundaries.
 
@@ -170,6 +170,26 @@ Use:
 - env vars should be loaded in a dedicated config helper
 - do not hardcode secrets or URLs
 
+### Environment File Rules
+
+Use these runtime environment files:
+
+- `frontend/.env.local` for frontend-safe public variables only
+- `backend/.env` for backend-only secrets
+
+Use the root `.env.example` only as a template and documentation artifact.
+
+Never put backend secrets in frontend environment files.
+Never expose:
+- `OPENAI_API_KEY`
+- Supabase secret/service role key
+- marketplace or scraping provider secret keys
+
+Frontend may only use public-safe variables such as:
+- `NEXT_PUBLIC_BACKEND_URL`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+
 ---
 
 ## 9. AI Integration Rules
@@ -217,20 +237,21 @@ Never:
 
 ## 10. Marketplace Integration Rules
 
-### eBay
-eBay is the only official marketplace integration to prioritize.
+### Market Data Provider
+Use a market data provider such as SerpApi for comparable market listings.
 
-Use eBay for:
+Use the provider for:
 - comparable market listings
-- optional publishing only after core flow is stable
+- normalized product and pricing data
+- fallback-ready integration behind a service boundary
 
-### Cross-Platform Vision
+### Marketplace Publishing
 Do not implement full cross-posting now.
 You may create export-ready structures for other marketplaces only if time permits and if clearly non-core.
 
 ### Publishing Rule
-Do not allow the eBay publish flow to derail the MVP.
-If it becomes too complex, isolate it and leave it as an optional stretch.
+Do not allow the optional marketplace publish flow to derail the MVP.
+If it becomes too complex, isolate it and leave it as an optional stretch or clearly labeled mock flow.
 
 ---
 
@@ -285,11 +306,11 @@ You must work in phases.
 1. scaffold and hygiene
 2. Supabase foundation
 3. upload and extraction
-4. eBay comparables
+4. market comparables
 5. valuation engine
 6. listing generation
 7. result page assembly
-8. optional eBay publish
+8. optional marketplace publish
 9. optional dashboard polish
 
 Do not skip ahead.
@@ -412,7 +433,7 @@ Expected important files include:
 - backend services for:
   - OpenAI extraction
   - OpenAI listing generation
-  - eBay comparables
+  - Market comparable retrieval
   - valuation
   - Supabase persistence
 

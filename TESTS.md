@@ -186,10 +186,10 @@ One real image upload must work end-to-end through extraction and frontend displ
 
 ---
 
-## 6. Phase 3 Tests: eBay Comparable Search
+## 6. Phase 3 Tests: Market Comparable Search
 
-### P3-T1 eBay Service Smoke Test
-Call eBay search service with a known query.
+### P3-T1 Market Data Service Smoke Test
+Call the market data provider search service with a known query.
 
 Expected:
 - receives response
@@ -232,7 +232,7 @@ Verify comps section shows:
 - clickable outbound link if allowed
 
 ### Phase 3 Exit Test
-Known good demo items must retrieve believable comps and show them in the UI.
+Known good demo items must retrieve believable market comps and show them in the UI.
 
 ---
 
@@ -376,7 +376,7 @@ The app must be demoable end-to-end on the golden path with confidence.
 
 ---
 
-## 10. Phase 7 Tests: Optional eBay Publish
+## 10. Phase 7 Tests: Optional Marketplace Publish
 
 ### P7-T1 Publish Service Smoke Test
 Verify publish route can be invoked without server crash.

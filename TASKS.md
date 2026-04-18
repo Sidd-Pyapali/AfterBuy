@@ -106,6 +106,12 @@ Establish a clean repo, frontend base, backend base, environment strategy, and i
 - ensure PLAN, TASKS, TESTS, CLAUDE exist
 - do not create extra docs unless useful
 
+#### T0.7 Runtime environment files
+- create `frontend/.env.local` for frontend-safe values
+- create `backend/.env` for backend-only secrets
+- keep root `.env.example` as the shared template only
+- verify secret keys are never referenced from frontend code
+
 ### Deliverables
 - working frontend scaffold
 - working backend scaffold
@@ -116,6 +122,10 @@ Establish a clean repo, frontend base, backend base, environment strategy, and i
 - backend runs successfully
 - `.gitignore` blocks env and build artifacts
 - no secrets committed
+- runtime env file structure is established:
+  - `frontend/.env.local`
+  - `backend/.env`
+- root `.env.example` documents expected variables
 
 ---
 
@@ -247,17 +257,17 @@ Create the first magical user interaction: upload an item image and receive stru
 
 ---
 
-## 6. Phase 3: eBay Comparable Search
+## 6. Phase 3: Market Comparable Search
 
 ### Objective
 Retrieve and normalize comparable marketplace listings for the extracted item.
 
 ### Required Tasks
 
-#### T3.1 eBay API client
-- create dedicated eBay service module
-- implement auth/token acquisition if required by chosen flow
-- isolate eBay-specific logic from route handlers
+#### T3.1 Market data provider client
+- create dedicated market data service module
+- implement provider authentication if required
+- isolate provider-specific logic from route handlers
 
 #### T3.2 Search strategy design
 Implement ordered search behavior:
@@ -297,11 +307,11 @@ Normalize each comp into a clean internal shape:
 - keep normalization simple and strong
 
 ### Deliverables
-- comparable listings retrieval from eBay
+- comparable listings retrieval from market data provider
 - normalized comparable cards in UI
 
 ### Gate 3 Exit Criteria
-- backend retrieves comps for a known good item
+- backend retrieves market comps for a known good item
 - comps are normalized and stored
 - frontend displays comps cleanly
 
@@ -348,7 +358,7 @@ Confidence should be based on:
 
 #### T4.5 Reason generation
 Create a short, deterministic explanation string such as:
-- "Based on 5 strong comparable eBay listings"
+- "Based on 5 strong comparable market listings"
 - "Estimate is lower confidence due to sparse exact matches"
 
 #### T4.6 Persistence
@@ -499,10 +509,10 @@ If listing generation fails:
 
 ---
 
-## 10. Phase 7: Optional eBay Publish Flow
+## 10. Phase 7: Optional Marketplace Publish Flow
 
 ### Objective
-Allow AfterBuy to publish the generated listing to eBay if feasible.
+Allow AfterBuy to publish the generated listing to a supported marketplace if feasible.
 
 ### Required Tasks
 
@@ -512,10 +522,10 @@ Allow AfterBuy to publish the generated listing to eBay if feasible.
 - define minimal publishable path
 
 #### T7.2 Publication service
-Create an eBay publication service module isolated from other logic.
+Create a marketplace publication service module isolated from other logic.
 
 #### T7.3 Publish endpoint
-Implement `POST /publish/ebay`
+Implement `POST /publish/marketplace`
 
 #### T7.4 Publication state persistence
 Store:
