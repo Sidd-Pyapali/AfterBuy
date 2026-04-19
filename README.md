@@ -144,7 +144,9 @@ create table generated_listings (
   condition_note text,
   suggested_price float,
   attributes_json jsonb,
-  generation_reasoning text
+  generation_reasoning text,
+  item_specifics_json jsonb,
+  photo_checklist_json jsonb
 );
 
 create table listing_publications (
@@ -219,7 +221,7 @@ Avoid: generic unbranded items, low-resolution images, images without a clear su
 | Listing edit and persistence | Real — saved to Supabase |
 | Channel distribution | Simulated — mock publication record per platform; no real marketplace API calls |
 | Inventory tracking | Real — reads from persisted item and publication records |
-| Wear assessment | OpenAI GPT-4o vision + backend heuristic aggregation |
+| Visible wear assessment | Real — OpenAI GPT-4o vision; structured per-zone signals with severity + confidence scores; pricing adjustment applied conservatively in backend |
 
 The distribution flow is intentionally simulated. Real marketplace publishing (eBay, Poshmark, etc.) requires seller account OAuth — out of scope for this MVP. The in-app copy reflects this honestly: "Listing routing is simulated for selected channels."
 
@@ -233,7 +235,7 @@ The distribution flow is intentionally simulated. Real marketplace publishing (e
 | `GET /health` | Service configuration status |
 | `POST /extract-item` | Upload image, run extraction, create item record |
 | `POST /find-comps` | Fetch and persist comparable market listings |
-| `POST /valuate-item` | Compute valuation from comps |
+| `POST /valuate-item` | Compute wear-aware valuation from comps |
 | `POST /generate-listing` | Generate listing copy with OpenAI |
 | `PATCH /listing/{id}` | Update listing after user edit |
 | `GET /item/{item_id}` | Return assembled item state for result page |
