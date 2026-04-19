@@ -4,13 +4,16 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ImagePlus, Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { extractItem } from "@/lib/api";
+import { extractItem, findComps, valuateItem, generateListing } from "@/lib/api";
 
-type Stage = "idle" | "uploading" | "identifying" | "error";
+type Stage = "idle" | "uploading" | "identifying" | "finding_comps" | "estimating_value" | "generating_listing" | "error";
 
-const STAGE_LABEL: Record<"uploading" | "identifying", string> = {
+const STAGE_LABEL: Record<"uploading" | "identifying" | "finding_comps" | "estimating_value" | "generating_listing", string> = {
   uploading: "Uploading image...",
   identifying: "Identifying item...",
+  finding_comps: "Finding market comparables...",
+  estimating_value: "Estimating value...",
+  generating_listing: "Generating listing...",
 };
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -68,6 +71,36 @@ export default function UploadZone() {
     try {
       const result = await extractItem(file);
       clearTimeout(stageTimer);
+
+      setStage("finding_comps");
+      let compsFound = false;
+      try {
+        const compsResult = await findComps(result.item.id);
+        compsFound = compsResult.comp_count > 0;
+      } catch {
+        // Non-fatal: comp failure still lets the user see the result
+      }
+
+      if (compsFound) {
+        setStage("estimating_value");
+        let valuationSucceeded = false;
+        try {
+          await valuateItem(result.item.id);
+          valuationSucceeded = true;
+        } catch {
+          // Non-fatal: valuation failure still lets the user see extraction + comps
+        }
+
+        if (valuationSucceeded) {
+          setStage("generating_listing");
+          try {
+            await generateListing(result.item.id);
+          } catch {
+            // Non-fatal: listing failure still lets the user see extraction + comps + valuation
+          }
+        }
+      }
+
       router.push(`/item/${result.item.id}`);
     } catch (err: unknown) {
       clearTimeout(stageTimer);
@@ -78,7 +111,7 @@ export default function UploadZone() {
     }
   }, [file, router]);
 
-  const isProcessing = stage === "uploading" || stage === "identifying";
+  const isProcessing = stage === "uploading" || stage === "identifying" || stage === "finding_comps" || stage === "estimating_value" || stage === "generating_listing";
 
   return (
     <div className="flex flex-col gap-4">
@@ -124,7 +157,7 @@ export default function UploadZone() {
       {isProcessing && (
         <div className="flex items-center justify-center gap-2 text-zinc-500 text-sm py-1">
           <Loader2 className="w-4 h-4 animate-spin" />
-          <span>{STAGE_LABEL[stage as "uploading" | "identifying"]}</span>
+          <span>{STAGE_LABEL[stage as "uploading" | "identifying" | "finding_comps" | "estimating_value" | "generating_listing"]}</span>
         </div>
       )}
 

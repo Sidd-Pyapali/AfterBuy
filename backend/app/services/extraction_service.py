@@ -35,7 +35,13 @@ Rules:
 - visible_condition must be one of: "new", "like_new", "good", "fair", "poor"
 - confidence is a float from 0.0 to 1.0 reflecting overall identification certainty
 - notable_details should list 2 to 5 observable features relevant to resale (e.g. "quilted exterior", "gold hardware", "scuff on right toe")
-- If the image is blurry, ambiguous, or hard to identify, lower confidence accordingly"""
+
+Handling low-quality or ambiguous images:
+- If the image is blank, nearly blank, very dark, or contains no physical item, set confidence to 0.1 or lower and return null for all metadata fields
+- If the image is so blurry or obscured that no item can be identified, set confidence to 0.1 or lower and return null for all metadata fields
+- If only a background, texture, or scene is visible with no identifiable product, set confidence to 0.1 or lower and return null for all metadata fields
+- Do not guess or infer an item type from context alone — require clear visual evidence of the item itself
+- Never fabricate a brand, product name, or category when the image does not clearly show one"""
 
 
 def extract_item(image_bytes: bytes, content_type: str, input_text: str | None = None) -> dict:

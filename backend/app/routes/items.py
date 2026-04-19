@@ -1,6 +1,7 @@
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import JSONResponse
-from app.services import storage_service, item_service, extraction_service
+from pydantic import BaseModel
+from app.services import storage_service, item_service, extraction_service, market_data_service, valuation_service, listing_service
 
 router = APIRouter()
 
@@ -79,6 +80,183 @@ def extract_item_endpoint(
     }
 
 
+class FindCompsRequest(BaseModel):
+    item_id: str
+
+
+# Minimum confidence to attempt a comparable search. Below this threshold,
+# extraction results are too weak to produce meaningful queries.
+_COMP_SEARCH_MIN_CONFIDENCE = 0.35
+
+
+def _is_item_searchable(item: dict) -> bool:
+    """Return True only if the item has enough metadata to search reliably."""
+    confidence = item.get("confidence_score") or 0.0
+    if confidence < _COMP_SEARCH_MIN_CONFIDENCE:
+        return False
+    has_title = bool((item.get("title_guess") or "").strip())
+    has_brand_and_type = (
+        bool((item.get("brand") or "").strip())
+        and bool((item.get("item_type") or "").strip())
+    )
+    return has_title or has_brand_and_type
+
+
+@router.post("/find-comps")
+def find_comps_endpoint(body: FindCompsRequest):
+    assembled = item_service.get_assembled_item(body.item_id)
+    if assembled is None:
+        return _error("ITEM_NOT_FOUND", "No item was found for the given item_id.", 404)
+
+    item = assembled["item"]
+
+    if not _is_item_searchable(item):
+        return {
+            "item_id": body.item_id,
+            "search_strategy": {"source": "serpapi", "skipped": True, "primary_query": None, "fallback_query": None},
+            "comps": [],
+            "comp_count": 0,
+            "warnings": ["Item could not be confidently identified. Comparable search was skipped."],
+        }
+
+    try:
+        comps, search_strategy = market_data_service.search_comps(item)
+    except Exception as exc:
+        print(f"[find-comps] Market data fetch failed: {exc}")
+        return _error(
+            "MARKETPLACE_FETCH_FAILED",
+            "Unable to retrieve comparable listings at this time.",
+            500,
+        )
+
+    persisted = item_service.insert_comps(body.item_id, comps)
+
+    serialized_comps = [_serialize_comp(c) for c in persisted]
+
+    warnings = []
+    if not serialized_comps:
+        warnings.append("No strong comparable listings were found.")
+
+    response: dict = {
+        "item_id": body.item_id,
+        "search_strategy": search_strategy,
+        "comps": serialized_comps,
+        "comp_count": len(serialized_comps),
+    }
+    if warnings:
+        response["warnings"] = warnings
+
+    return response
+
+
+def _serialize_comp(db_comp: dict) -> dict:
+    return {
+        "id": db_comp["id"],
+        "source": db_comp["source"],
+        "title": db_comp["comp_title"],
+        "price": db_comp["comp_price"],
+        "currency": db_comp.get("currency", "USD"),
+        "url": db_comp["comp_url"],
+        "image_url": db_comp["comp_image_url"],
+        "condition": db_comp["comp_condition"],
+        "similarity_score": db_comp["similarity_score"],
+    }
+
+
+def _serialize_valuation(db_val: dict) -> dict:
+    return {
+        "id": db_val["id"],
+        "estimated_low": db_val["estimated_low"],
+        "estimated_mid": db_val["estimated_mid"],
+        "estimated_high": db_val["estimated_high"],
+        "suggested_listing_price": db_val["suggested_listing_price"],
+        "confidence": db_val["confidence"],
+        "valuation_reason": db_val["valuation_reason"],
+        "valuation_method": db_val["valuation_method"],
+        "comp_count": db_val["comp_count"],
+    }
+
+
+def _serialize_listing(db_listing: dict) -> dict:
+    return {
+        "id": db_listing["id"],
+        "platform": db_listing["platform"],
+        "title": db_listing["title"],
+        "description": db_listing["description"],
+        "condition_note": db_listing["condition_note"],
+        "suggested_price": db_listing["suggested_price"],
+        "attributes": db_listing.get("attributes_json"),
+    }
+
+
+class ValuateItemRequest(BaseModel):
+    item_id: str
+
+
+@router.post("/valuate-item")
+def valuate_item_endpoint(body: ValuateItemRequest):
+    assembled = item_service.get_assembled_item(body.item_id)
+    if assembled is None:
+        return _error("ITEM_NOT_FOUND", "No item was found for the given item_id.", 404)
+
+    item = assembled["item"]
+    comps = assembled["comps"]
+
+    if not comps:
+        return _error(
+            "VALUATION_FAILED",
+            "No comparable listings available. Run /find-comps first.",
+            400,
+        )
+
+    try:
+        valuation_data = valuation_service.compute_valuation(item, comps)
+    except ValueError as exc:
+        return _error("VALUATION_FAILED", str(exc), 400)
+    except Exception as exc:
+        print(f"[valuate-item] Valuation computation failed: {exc}")
+        return _error("VALUATION_FAILED", "Unable to generate a reliable valuation for this item.", 500)
+
+    persisted = item_service.insert_valuation(body.item_id, valuation_data)
+
+    return {
+        "item_id": body.item_id,
+        "valuation": _serialize_valuation(persisted),
+    }
+
+
+class GenerateListingRequest(BaseModel):
+    item_id: str
+    platform: str = "generic"
+
+
+@router.post("/generate-listing")
+def generate_listing_endpoint(body: GenerateListingRequest):
+    assembled = item_service.get_assembled_item(body.item_id)
+    if assembled is None:
+        return _error("ITEM_NOT_FOUND", "No item was found for the given item_id.", 404)
+
+    item = assembled["item"]
+    valuation = assembled["valuation"]
+
+    if not valuation:
+        return _error("MISSING_VALUATION", "A valuation must exist before generating a listing.", 400)
+
+    try:
+        listing_data = listing_service.generate_listing(item, valuation)
+    except Exception as exc:
+        print(f"[generate-listing] Listing generation failed: {exc}")
+        return _error("LISTING_GENERATION_FAILED", "Unable to generate listing content at this time.", 500)
+
+    listing_data["platform"] = body.platform
+    persisted = item_service.insert_generated_listing(body.item_id, listing_data)
+
+    return {
+        "item_id": body.item_id,
+        "listing": _serialize_listing(persisted),
+    }
+
+
 @router.get("/item/{item_id}")
 def get_item(item_id: str):
     assembled = item_service.get_assembled_item(item_id)
@@ -87,8 +265,8 @@ def get_item(item_id: str):
 
     return {
         "item": _serialize_item(assembled["item"]),
-        "comps": assembled["comps"],
-        "valuation": assembled["valuation"],
-        "listing": assembled["listing"],
+        "comps": [_serialize_comp(c) for c in assembled["comps"]],
+        "valuation": _serialize_valuation(assembled["valuation"]) if assembled["valuation"] else None,
+        "listing": _serialize_listing(assembled["listing"]) if assembled["listing"] else None,
         "publication": assembled["publication"],
     }
