@@ -2,11 +2,11 @@
 
 AfterBuy is a mobile-first AI ownership agent for post-purchase commerce.
 
-Upload a photo of something you own. AfterBuy identifies it, finds comparable market listings, estimates its resale value, and generates a marketplace-ready listing — with minimal effort.
+Upload or photograph something you own. AfterBuy identifies it, finds comparable market listings, estimates its resale value, generates a marketplace-ready listing, lets you review/edit it, and can mock-publish it across marketplaces while tracking status in one place.
 
 ## What it does
 
-**photo upload → item extraction → market comparables → resale valuation → generated listing → optional marketplace publish**
+**photo upload or camera capture → item extraction → market comparables → resale valuation → generated listing → review/edit → mock marketplace publish → optional tracking dashboard**
 
 ## Tech Stack
 

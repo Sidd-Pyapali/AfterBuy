@@ -563,12 +563,45 @@ Do not overfit listing copy to many marketplace differences for the MVP.
 }
 ```
 
-#### Implementation Notes
+## 9.2 `PATCH /listing/{item_id}`
 
-- Generated copy must be factual
-- Avoid fake measurements or materials
-- Persist listing output in DB
-- The frontend should support copying title and description separately
+### Purpose
+Update the generated listing content after user review/edit.
+
+### Request Body
+
+```json
+{
+  "title": "The North Face Green Jacket",
+  "description": "Pre-owned green jacket in good condition...",
+  "condition_note": "Light wear with no major flaws.",
+  "suggested_price": 141.0
+}
+```
+
+#### Success Response
+```json
+{
+  "item_id": "item_123",
+  "listing": {
+    "id": "listing_123",
+    "platform": "generic",
+    "title": "The North Face Green Jacket",
+    "description": "Pre-owned green jacket in good condition...",
+    "condition_note": "Light wear with no major flaws.",
+    "suggested_price": 141.0,
+    "attributes": {
+      "brand": "The North Face",
+      "category": "Clothing",
+      "color": "Green",
+      "condition": "like_new"
+    }
+  }
+}
+```
+#### Notes
+- this supports a review/edit before publish flow
+- only editable listing fields should be updated
 
 ## 10. Full Assembled Item Endpoint
 
@@ -723,19 +756,20 @@ Use standard error format.
 - If implemented, it should internally call the same service layers as the individual endpoints
 - Do not duplicate business logic
 
-## 12. Marketplace Publish Endpoint (Optional Stretch)
+## 12. Marketplace Publish and Inventory Endpoints (Optional Stretch)
 
 ### 12.1 `POST /publish/marketplace`
 
 #### Purpose
 
-Publish a generated listing to a supported marketplace if the publish flow is implemented.
+Create a clearly labeled mock multi-market publish result for a generated listing and persist platform publication state.
 
 #### Request Body
 
 ```json
 {
-  "item_id": "item_123"
+  "item_id": "item_123",
+  "platforms": ["ebay", "poshmark", "depop"]
 }
 ```
 
@@ -744,30 +778,22 @@ Publish a generated listing to a supported marketplace if the publish flow is im
 ```json
 {
   "item_id": "item_123",
-  "publication": {
-    "id": "pub_123",
-    "platform": "marketplace",
-    "publication_status": "published",
-    "external_listing_id": "listing_123",
-    "external_listing_url": "https://www.example.com/listings/1234567890"
-  }
-}
-```
-
-#### Partial / Mock Success Response
-
-If only a mock publish flow is available, it must be clearly labeled:
-
-```json
-{
-  "item_id": "item_123",
-  "publication": {
-    "id": "pub_123",
-    "platform": "marketplace",
-    "publication_status": "mock_published",
-    "external_listing_id": null,
-    "external_listing_url": null
-  },
+  "publications": [
+    {
+      "id": "pub_123",
+      "platform": "ebay",
+      "publication_status": "mock_published",
+      "external_listing_id": "ebay_demo_123",
+      "external_listing_url": "https://example.com/demo/ebay/123"
+    },
+    {
+      "id": "pub_124",
+      "platform": "poshmark",
+      "publication_status": "mock_published",
+      "external_listing_id": "poshmark_demo_456",
+      "external_listing_url": "https://example.com/demo/poshmark/456"
+    }
+  ],
   "warnings": [
     "This is a mock publish flow for demo purposes."
   ]
@@ -788,18 +814,16 @@ If only a mock publish flow is available, it must be clearly labeled:
 
 #### Implementation Notes
 
-- This endpoint is optional
-- Do not implement this before the core flow is complete
-- Real publish should only be attempted if marketplace credentials and provider requirements are ready
-- Never pretend a real publish happened if it did not
+- this endpoint is optional
+- for the hackathon MVP, a clearly labeled mock flow is preferred over a fragile real integration
+- selected platforms should be persisted in publication records
+- never pretend a real publish happened if it did not
 
-## 13. Inventory Listing Endpoint (Optional Stretch)
-
-### 13.1 `GET /items`
+### 12.2 `GET /items`
 
 #### Purpose
 
-Return a simple inventory list of uploaded items for optional dashboard views.
+Return a simple inventory list of uploaded items for dashboard and listing tracking views.
 
 #### Query Parameters
 
@@ -819,7 +843,8 @@ Optional:
       "title_guess": "The North Face black puffer jacket",
       "category": "outerwear",
       "valuation_mid": 82.0,
-      "listing_status": "generated",
+      "listing_status": "mock_published",
+      "platforms": ["ebay", "depop"],
       "created_at": "2026-04-18T17:00:00Z"
     }
   ],
@@ -833,10 +858,11 @@ Optional:
 
 #### Notes
 
-This is stretch only.  
-Do not build before the core result flow is stable.
+- this is stretch only
+- do not build before the core result flow is stable
+- the inventory response should support lightweight tracking, not a complex admin dashboard
 
-## 14. Backend Internal Service Boundaries
+## 13. Backend Internal Service Boundaries
 
 The API should be implemented using service boundaries like:
 
@@ -895,7 +921,7 @@ Responsibilities:
 
 These boundaries are not directly exposed to the frontend, but they should shape implementation.
 
-## 15. Frontend Consumption Model
+## 14. Frontend Consumption Model
 
 The frontend should prefer one of two modes:
 
@@ -920,7 +946,7 @@ This may be easier to debug during development.
 
 Support stepwise logic internally if useful, but expose a smooth orchestrated flow for demo if possible.
 
-## 16. Validation Rules
+## 15. Validation Rules
 
 ### Input Validation
 
@@ -937,7 +963,7 @@ Support stepwise logic internally if useful, but expose a smooth orchestrated fl
 - listing generation must return non-empty title and description
 - publication responses must clearly distinguish real vs mock
 
-## 17. Security and Secret Handling
+## 16. Security and Secret Handling
 
 ### Rules
 
@@ -953,7 +979,7 @@ Support stepwise logic internally if useful, but expose a smooth orchestrated fl
 - do not return raw OpenAI response blobs to frontend
 - avoid exposing internal debugging data in normal responses
 
-## 18. Logging and Debugging Guidance
+## 17. Logging and Debugging Guidance
 
 For implementation:
 
@@ -972,14 +998,14 @@ Useful log checkpoints:
 - listing generated
 - publish attempted
 
-## 19. API Versioning
+## 18. API Versioning
 
 No formal versioning is required for the hackathon MVP.
 
 Do not introduce `/v1` unless it is already convenient.  
 Keep the API surface simple.
 
-## 20. Final API Contract Priorities
+## 19. Final API Contract Priorities
 
 If time is limited, prioritize the following endpoints in this order:
 
@@ -996,7 +1022,7 @@ If time is limited, prioritize the following endpoints in this order:
 The app is viable without the last three.  
 The app is not viable without the first six.
 
-## 21. Final Principle
+## 20. Final Principle
 
 The API should optimize for:
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from app.services import storage_service, item_service, extraction_service, market_data_service, valuation_service, listing_service
+from app.services import storage_service, item_service, extraction_service, market_data_service, valuation_service, listing_service, publication_service
 
 router = APIRouter()
 
@@ -177,6 +177,16 @@ def _serialize_valuation(db_val: dict) -> dict:
     }
 
 
+def _serialize_publication(db_pub: dict) -> dict:
+    return {
+        "id": db_pub["id"],
+        "platform": db_pub["platform"],
+        "publication_status": db_pub["publication_status"],
+        "external_listing_id": db_pub.get("external_listing_id"),
+        "external_listing_url": db_pub.get("external_listing_url"),
+    }
+
+
 def _serialize_listing(db_listing: dict) -> dict:
     return {
         "id": db_listing["id"],
@@ -257,6 +267,61 @@ def generate_listing_endpoint(body: GenerateListingRequest):
     }
 
 
+class UpdateListingRequest(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    condition_note: str | None = None
+    suggested_price: float | None = None
+
+
+@router.patch("/listing/{listing_id}")
+def update_listing_endpoint(listing_id: str, body: UpdateListingRequest):
+    update_data = body.model_dump(exclude_none=True)
+    if not update_data:
+        return _error("NO_FIELDS", "No fields provided to update.", 400)
+    try:
+        updated = item_service.update_listing(listing_id, update_data)
+    except ValueError as exc:
+        return _error("LISTING_NOT_FOUND", str(exc), 404)
+    except Exception as exc:
+        print(f"[update-listing] Update failed: {exc}")
+        return _error("UPDATE_FAILED", "Unable to update listing.", 500)
+    return {"listing": _serialize_listing(updated)}
+
+
+class PublishRequest(BaseModel):
+    item_id: str
+    platforms: list[str]
+
+
+@router.post("/publish/marketplace")
+def publish_marketplace_endpoint(body: PublishRequest):
+    assembled = item_service.get_assembled_item(body.item_id)
+    if assembled is None:
+        return _error("ITEM_NOT_FOUND", "No item was found for the given item_id.", 404)
+
+    if not body.platforms:
+        return _error("NO_PLATFORMS", "At least one platform must be selected.", 400)
+
+    publications = publication_service.mock_publish(body.platforms)
+    if not publications:
+        return _error("INVALID_PLATFORMS", "No valid platforms were provided.", 400)
+
+    persisted = item_service.insert_publications(body.item_id, publications)
+
+    return {
+        "item_id": body.item_id,
+        "publications": [_serialize_publication(p) for p in persisted],
+        "warnings": ["This is a demo publish. No real marketplace listings were created."],
+    }
+
+
+@router.get("/items")
+def list_items(limit: int = 20, offset: int = 0):
+    items = item_service.get_items_list(limit=limit, offset=offset)
+    return {"items": items, "pagination": {"limit": limit, "offset": offset, "total": len(items)}}
+
+
 @router.get("/item/{item_id}")
 def get_item(item_id: str):
     assembled = item_service.get_assembled_item(item_id)
@@ -268,5 +333,5 @@ def get_item(item_id: str):
         "comps": [_serialize_comp(c) for c in assembled["comps"]],
         "valuation": _serialize_valuation(assembled["valuation"]) if assembled["valuation"] else None,
         "listing": _serialize_listing(assembled["listing"]) if assembled["listing"] else None,
-        "publication": assembled["publication"],
+        "publications": [_serialize_publication(p) for p in assembled["publications"]],
     }

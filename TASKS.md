@@ -509,55 +509,80 @@ If listing generation fails:
 
 ---
 
-## 10. Phase 7: Optional Marketplace Publish Flow
+## 10. Phase 7: Review, Edit, and Mock Marketplace Publish
 
 ### Objective
-Allow AfterBuy to publish the generated listing to a supported marketplace if feasible.
+Allow the user to review and edit the generated listing, then demonstrate a clearly labeled mock multi-market publish flow.
 
 ### Required Tasks
 
-#### T7.1 Research implementation boundary
-- confirm credential needs
-- confirm seller requirements
-- define minimal publishable path
+#### T7.1 Listing review/edit UI
+Allow the user to review and modify:
+- title
+- description
+- condition note
+- suggested price
 
-#### T7.2 Publication service
+#### T7.2 Listing update persistence
+Implement backend support to save edited listing values and persist them to the generated listing record.
+
+#### T7.3 Mock marketplace selection flow
+Add a publish action that allows the user to choose one or more marketplaces, such as:
+- eBay
+- Poshmark
+- Depop
+- Facebook Marketplace
+
+#### T7.4 Publication service
 Create a marketplace publication service module isolated from other logic.
 
-#### T7.3 Publish endpoint
+This should support a clearly labeled demo/mock flow if real publishing is not feasible.
+
+#### T7.5 Publish endpoint
 Implement `POST /publish/marketplace`
 
-#### T7.4 Publication state persistence
+The endpoint may support:
+- selected platforms
+- clearly labeled mock publication result
+
+#### T7.6 Publication state persistence
 Store:
 - publication_status
-- external_listing_id
-- external_listing_url if available
+- platform
+- external_listing_id if mocked/generated
+- external_listing_url if mocked/generated
 - raw response JSON for debugging
 
-#### T7.5 Frontend publish action
-Add a publish button to listing preview
+#### T7.7 Frontend publish action
+Add a publish button to the listing review area.
 Show:
 - loading state
 - success state
 - failure state
+- clear mock/demo labeling if this is not a real publish
 
 ### Constraints
-- if real publishing is too complex, stop and do not derail the MVP
-- if mocking is necessary, it must be clearly labeled
-- do not implement this before core flow is stable
+- if real publishing is too complex, use a clearly labeled mock flow
+- do not misrepresent a mock publish as a real marketplace post
+- do not let marketplace work derail the core demo
 
 ### Deliverables
-- real or clearly labeled mock publish flow
+- editable listing review step
+- clearly labeled mock multi-market publish flow
+- persisted publication state
 
 ### Gate 7 Exit Criteria
-- publish flow works or is intentionally deferred without harming MVP
+- user can review and edit listing
+- user can choose marketplaces
+- mock publish flow works and is clearly labeled
+- publication state is visible in the app
 
 ---
 
-## 11. Phase 8: Stretch Inventory / Listing Dashboard
+## 11. Phase 8: Inventory, Listing Tracking, Camera, and Polish
 
 ### Objective
-Show that AfterBuy can serve as a simple ownership and resale management layer.
+Show that AfterBuy can serve as a lightweight ownership and resale management layer.
 
 ### Required Tasks
 
@@ -569,27 +594,44 @@ Display:
 - valuation mid
 - status badge
 
-#### T8.2 Listing status page
+#### T8.2 Listing status page or section
 Display:
-- platform
-- generated or published status
+- selected platform(s)
+- generated or published/mock-published status
 - suggested price
 - quick actions
 
-#### T8.3 Visual polish
+#### T8.3 Camera capture option
+Allow the user to:
+- upload a photo from device library
+- take a photo using the device camera on supported mobile browsers
+
+#### T8.4 Visual polish
 - improve spacing
 - improve mobile layout
 - reduce UI rough edges
+- make the interface feel more premium and consumer-facing
+
+#### T8.5 Navigation polish
+Ensure clean navigation between:
+- homepage
+- result page
+- inventory/listing tracking views
 
 ### Constraints
 - dashboard must not become cluttered
-- do not build this before the core demo is stable
+- avoid turning the app into an admin console
+- keep the experience mobile-first and demo-friendly
 
 ### Deliverables
-- optional inventory/listing pages
+- optional inventory and listing tracking views
+- camera capture support
+- polished mobile-first UI
 
 ### Gate 8 Exit Criteria
-- pages support the product story without distracting from core demo
+- pages support the product story without distracting from the core demo
+- camera capture works on supported mobile browsers
+- visual polish improves demo quality
 
 ---
 
@@ -614,6 +656,17 @@ Document:
 - how to run locally
 - environment variables
 - any limitations
+
+### T9.6 Validate publish demo path
+Run one full review/edit → mock publish → status tracking flow.
+
+### T9.7 Validate phone camera path
+Test upload from:
+- library
+- camera capture on phone
+
+### T9.8 Validate deployed demo
+Confirm the deployed frontend works on a phone-sized viewport and that the main demo path is stable.
 
 ---
 

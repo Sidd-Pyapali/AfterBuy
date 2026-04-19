@@ -376,47 +376,71 @@ The app must be demoable end-to-end on the golden path with confidence.
 
 ---
 
-## 10. Phase 7 Tests: Optional Marketplace Publish
+## 10. Phase 7 Tests: Review, Edit, and Mock Publish
 
-### P7-T1 Publish Service Smoke Test
-Verify publish route can be invoked without server crash.
+### P7-T1 Listing Edit Test
+Modify title, description, and price in the review UI.
 
-### P7-T2 Publish Result Test
-If real publishing is implemented:
-- verify response contains marketplace reference or success state
+Expected:
+- changes save successfully
+- refreshed page shows edited values
+- saved listing remains grounded and readable
 
-If mock publishing is used:
-- verify UI and API clearly label it as mock
+### P7-T2 Mock Publish Test
+Select one or more marketplaces and trigger publish.
 
-### P7-T3 UI Publish Test
+Expected:
+- publish flow completes without server crash
+- success state is shown
+- response is clearly labeled as mock/demo if not real
+
+### P7-T3 Publication Persistence Test
+After publish, refresh or revisit the item page.
+
+Expected:
+- platform and publication status still appear
+- publication state is retrieved from persistence
+
+### P7-T4 UI Publish Test
 Expected:
 - publish button works
 - loading state visible
 - success/failure state shown clearly
-
-### P7-T4 Persistence Test
-Publication result should be stored in listing_publications if implemented.
+- selected platforms are reflected in UI
 
 ### Phase 7 Exit Test
-Real publish works or the feature is intentionally deferred without harming the MVP.
+The user can review/edit a listing, run a clearly labeled mock publish flow, and see resulting platform state in the app.
 
 ---
 
-## 11. Stretch Tests: Inventory / Listing Dashboard
+## 11. Phase 8 Tests: Inventory, Tracking, Camera, and Polish
 
 ### P8-T1 Inventory Page Test
 Expected:
 - previously uploaded items render as cards
-- titles, thumbnails, and valuation snippets appear correctly
+- thumbnails, titles, and valuation snippets appear correctly
 
 ### P8-T2 Listing Status Test
 Expected:
-- generated and published statuses show correctly
+- generated and published/mock-published statuses show correctly
+- selected platforms are visible
 - layout remains uncluttered
 
-### P8-T3 Navigation Test
+### P8-T3 Camera Capture Test
+On a supported mobile browser, verify:
+- user can choose upload from library
+- user can choose take photo
+- image enters the same flow successfully
+
+### P8-T4 Navigation Test
 Expected:
 - moving between landing, result, and inventory pages is stable
+
+### P8-T5 Mobile Polish Test
+Expected:
+- no layout clipping
+- buttons remain tappable
+- result page and inventory page feel clean on a phone viewport
 
 ---
 
@@ -434,6 +458,11 @@ The project is demo-ready only if all are true:
 - no obvious console errors on golden path
 - no secrets are exposed in frontend bundle
 - at least one fallback case behaves gracefully
+- listing review/edit flow works
+- mock publish flow is clearly labeled and works cleanly
+- inventory/listing tracking page supports the product story
+- camera capture works on phone if included
+- deployed frontend works on phone
 
 ---
 

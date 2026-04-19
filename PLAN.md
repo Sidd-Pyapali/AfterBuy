@@ -6,7 +6,7 @@
 AfterBuy
 
 ### One-Line Description
-AfterBuy is a mobile-first AI ownership agent that helps users understand what an item they own is, estimate what it is worth on the resale market, and instantly generate a marketplace-ready listing with minimal effort.
+AfterBuy is a mobile-first AI ownership agent that helps users identify what they own, estimate resale value, generate a marketplace-ready listing, review and edit it, and track mock multi-market resale actions in one place.
 
 ### Core Product Thesis
 Most commerce products optimize the moment before checkout.
@@ -102,6 +102,13 @@ This MVP is not trying to:
 - replace marketplace-native seller dashboards
 - build sophisticated user auth and account systems
 
+## Additional Demo Goals
+- let the user review and edit the generated listing before publish
+- demonstrate a clearly labeled mock multi-market publish flow
+- show lightweight listing tracking inside AfterBuy
+- support phone capture as well as image upload
+- make the UI feel closer to a premium consumer shopping product
+
 ---
 
 ## 4. MVP Definition
@@ -115,8 +122,10 @@ A user can:
 5. have the system fetch comparable listings from a market data provider
 6. see a valuation range and suggested listing price
 7. generate a resale listing with title and description
-8. copy or export the generated listing
-9. optionally publish to a supported marketplace if implemented successfully
+8. review and edit the generated listing before publish
+9. copy or export the generated listing
+10. optionally publish to selected marketplaces through a clearly labeled mock publish flow if real publishing is not feasible
+11. optionally view uploaded items and listing/publication state in a lightweight inventory dashboard
 
 ### MVP Success Standard
 The MVP is successful if one golden path works smoothly and convincingly from beginning to end.
@@ -201,8 +210,9 @@ The homepage should immediately communicate:
 - what the user can do
 - the first action to take
 
-The first action should be the main one:
-Upload an item photo
+The first action should support both:
+- upload an item photo
+- take a photo with the camera on supported mobile devices
 
 ## Processing Experience
 The user should feel like the system is doing meaningful work.
@@ -223,7 +233,9 @@ The result page should be clearly segmented into:
 3. comparable listings
 4. valuation summary
 5. generated listing
-6. action buttons
+6. review and edit section
+7. publish/distribution actions
+8. action buttons
 
 ## Design Goal
 The product should feel like a modern consumer app, not a hacky admin dashboard.
@@ -593,6 +605,14 @@ Preferred demo should use:
 - clean UI
 - one polished flow
 
+## Phone Demo Requirement
+The frontend should be deployable to Vercel for phone testing and live demo sharing.
+
+If backend deployment is not feasible in time, the team should still prioritize:
+- frontend deployment
+- mobile browser testing
+- camera capture validation on phone
+
 ---
 
 ## 14. Implementation Phases
@@ -619,13 +639,10 @@ Listing generation
 Result page assembly
 
 ## Phase 7
-Optional marketplace publish
+Review, edit, and mock marketplace publish
 
 ## Phase 8
-Stretch dashboard and polish
-
-### Phase Progression Rule
-Each phase must be completed, checked against TASKS.md and TESTS.md, and explicitly approved by the user before the next phase begins.
+Inventory, listing tracking, camera capture, and polish
 
 ---
 

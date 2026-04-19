@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ImagePlus, Loader2, Upload } from "lucide-react";
+import { Camera, ImagePlus, Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { extractItem, findComps, valuateItem, generateListing } from "@/lib/api";
 
@@ -22,6 +22,7 @@ const MAX_SIZE_MB = 10;
 export default function UploadZone() {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const previewUrlRef = useRef<string | null>(null);
 
   const [file, setFile] = useState<File | null>(null);
@@ -145,10 +146,19 @@ export default function UploadZone() {
         )}
       </button>
 
+      {/* Hidden file inputs — gallery and camera */}
       <input
         ref={inputRef}
         type="file"
         accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={handleFileChange}
+      />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        capture="environment"
         className="hidden"
         onChange={handleFileChange}
       />
@@ -162,29 +172,45 @@ export default function UploadZone() {
       )}
 
       {/* Error message */}
-      {stage === "error" && errorMessage && (
-        <p className="text-sm text-red-500 text-center px-1">{errorMessage}</p>
-      )}
-      {stage === "idle" && errorMessage && (
+      {(stage === "error" || stage === "idle") && errorMessage && (
         <p className="text-sm text-red-500 text-center px-1">{errorMessage}</p>
       )}
 
-      {/* Action button */}
+      {/* Action buttons */}
       {file && !isProcessing ? (
-        <Button
-          onClick={handleSubmit}
-          className="w-full h-12 text-base font-medium rounded-xl"
-        >
-          Analyze Item
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => inputRef.current?.click()}
+            className="flex-1 h-12 rounded-xl text-sm font-medium"
+          >
+            Change photo
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            className="flex-1 h-12 text-base font-medium rounded-xl"
+          >
+            Analyze item
+          </Button>
+        </div>
       ) : !file && !isProcessing ? (
-        <Button
-          onClick={() => inputRef.current?.click()}
-          className="w-full h-12 text-base font-medium rounded-xl"
-        >
-          <Upload className="w-4 h-4" />
-          Select a photo
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => inputRef.current?.click()}
+            className="flex-1 h-12 rounded-xl text-sm font-medium"
+          >
+            <Upload className="w-4 h-4" />
+            Upload photo
+          </Button>
+          <Button
+            onClick={() => cameraInputRef.current?.click()}
+            className="flex-1 h-12 text-sm font-medium rounded-xl"
+          >
+            <Camera className="w-4 h-4" />
+            Take photo
+          </Button>
+        </div>
       ) : null}
     </div>
   );

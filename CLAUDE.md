@@ -142,6 +142,15 @@ The user should always understand:
 - do not introduce complex state libraries unless absolutely necessary
 - local state and fetch-based flows are preferred
 
+### Review and Action Rule
+The result flow may include:
+- generated listing preview
+- editable listing review
+- publish/distribution actions
+- lightweight tracking views
+
+These should remain simple, mobile-first, and consumer-facing.
+
 ---
 
 ## 8. Backend Rules
@@ -253,6 +262,17 @@ You may create export-ready structures for other marketplaces only if time permi
 Do not allow the optional marketplace publish flow to derail the MVP.
 If it becomes too complex, isolate it and leave it as an optional stretch or clearly labeled mock flow.
 
+### Demo Publish Rule
+For hackathon purposes, a clearly labeled mock multi-market publish flow is preferred over a fragile real integration.
+
+If real marketplace publishing requires substantial auth, seller setup, or approval delays, implement:
+- marketplace selection UI
+- mock publication state
+- persisted per-platform status
+- clear demo labeling
+
+Do not misrepresent a mock publish as a real publish.
+
 ---
 
 ## 11. Database and Persistence Rules
@@ -310,8 +330,8 @@ You must work in phases.
 5. valuation engine
 6. listing generation
 7. result page assembly
-8. optional marketplace publish
-9. optional dashboard polish
+8. review, edit, and mock marketplace publish
+9. inventory, listing tracking, camera capture, and polish
 
 Do not skip ahead.
 
@@ -334,6 +354,11 @@ After each completed phase, provide:
 6. known limitations
 
 Do not just dump code with no explanation.
+
+If camera capture, publish mockups, or dashboard views are added, include:
+- what is real versus mocked
+- what was persisted
+- exact manual phone or mobile-browser verification steps
 
 ---
 

@@ -66,6 +66,33 @@ def insert_valuation(item_id: str, valuation: dict) -> dict:
     return result.data[0]
 
 
+def update_listing(listing_id: str, fields: dict) -> dict:
+    client = get_supabase()
+    result = client.table("generated_listings").update(fields).eq("id", listing_id).execute()
+    if not result.data:
+        raise ValueError(f"Listing {listing_id} not found")
+    return result.data[0]
+
+
+def insert_publications(item_id: str, publications: list[dict]) -> list[dict]:
+    if not publications:
+        return []
+    client = get_supabase()
+    rows = [
+        {
+            "item_id": item_id,
+            "platform": p["platform"],
+            "publication_status": p["publication_status"],
+            "external_listing_id": p.get("external_listing_id"),
+            "external_listing_url": p.get("external_listing_url"),
+            "raw_response_json": p.get("raw_response_json"),
+        }
+        for p in publications
+    ]
+    result = client.table("listing_publications").insert(rows).execute()
+    return result.data
+
+
 def insert_generated_listing(item_id: str, listing: dict) -> dict:
     client = get_supabase()
     result = client.table("generated_listings").insert({
@@ -79,6 +106,86 @@ def insert_generated_listing(item_id: str, listing: dict) -> dict:
         "generation_reasoning": listing.get("generation_reasoning"),
     }).execute()
     return result.data[0]
+
+
+def get_items_list(limit: int = 20, offset: int = 0) -> list[dict]:
+    client = get_supabase()
+
+    items_result = (
+        client.table("items")
+        .select("id, created_at, image_url, title_guess, category, brand, item_type")
+        .order("created_at", desc=True)
+        .limit(limit)
+        .offset(offset)
+        .execute()
+    )
+    items = items_result.data or []
+    if not items:
+        return []
+
+    item_ids = [i["id"] for i in items]
+
+    val_result = (
+        client.table("valuations")
+        .select("item_id, estimated_mid")
+        .in_("item_id", item_ids)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    # keep only the latest valuation per item
+    seen: set[str] = set()
+    val_map: dict[str, float | None] = {}
+    for v in (val_result.data or []):
+        iid = v["item_id"]
+        if iid not in seen:
+            val_map[iid] = v["estimated_mid"]
+            seen.add(iid)
+
+    pub_result = (
+        client.table("listing_publications")
+        .select("item_id, platform, publication_status")
+        .in_("item_id", item_ids)
+        .execute()
+    )
+    pub_map: dict[str, list[dict]] = {}
+    for p in (pub_result.data or []):
+        iid = p["item_id"]
+        pub_map.setdefault(iid, []).append(p)
+
+    listing_result = (
+        client.table("generated_listings")
+        .select("item_id, title")
+        .in_("item_id", item_ids)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    listing_seen: set[str] = set()
+    listing_map: dict[str, str | None] = {}
+    for l in (listing_result.data or []):
+        iid = l["item_id"]
+        if iid not in listing_seen:
+            listing_map[iid] = l.get("title")
+            listing_seen.add(iid)
+
+    enriched = []
+    for item in items:
+        iid = item["id"]
+        pubs = pub_map.get(iid, [])
+        platforms = [p["platform"] for p in pubs]
+        enriched.append({
+            "id": iid,
+            "created_at": item["created_at"],
+            "image_url": item["image_url"],
+            "title_guess": item.get("title_guess"),
+            "listing_title": listing_map.get(iid),
+            "category": item.get("category"),
+            "brand": item.get("brand"),
+            "item_type": item.get("item_type"),
+            "valuation_mid": val_map.get(iid),
+            "platforms": platforms,
+            "listing_status": "distributed" if platforms else ("listed" if iid in listing_map else ("valued" if iid in val_map else "identified")),
+        })
+    return enriched
 
 
 def get_assembled_item(item_id: str) -> dict | None:
@@ -122,16 +229,15 @@ def get_assembled_item(item_id: str) -> dict | None:
         client.table("listing_publications")
         .select("*")
         .eq("item_id", item_id)
-        .order("created_at", desc=True)
-        .limit(1)
+        .order("created_at", desc=False)
         .execute()
     )
-    publication = pub_result.data[0] if pub_result.data else None
+    publications = pub_result.data or []
 
     return {
         "item": item,
         "comps": comps,
         "valuation": valuation,
         "listing": listing,
-        "publication": publication,
+        "publications": publications,
     }

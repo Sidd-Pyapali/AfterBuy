@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeft, ImagePlus } from "lucide-react";
+import { ChevronLeft, ImagePlus, LayoutList } from "lucide-react";
 import ExtractionResult from "@/components/ExtractionResult";
 import CompsSection from "@/components/CompsSection";
 import ValuationCard from "@/components/ValuationCard";
 import ListingCard from "@/components/ListingCard";
 import RetryListingButton from "@/components/RetryListingButton";
+import ListingEditPanel from "@/components/ListingEditPanel";
 import { AssembledItem } from "@/lib/api";
 
 async function fetchItem(itemId: string): Promise<AssembledItem | null> {
@@ -43,9 +44,16 @@ export default async function ItemPage({
             <ChevronLeft className="w-4 h-4" />
             New item
           </Link>
-          <span className="ml-auto text-xs font-semibold tracking-widest text-zinc-400 uppercase">
+          <span className="mx-auto text-xs font-semibold tracking-widest text-zinc-400 uppercase">
             AfterBuy
           </span>
+          <Link
+            href="/inventory"
+            className="flex items-center gap-1 text-xs font-medium text-zinc-400 hover:text-zinc-700 transition-colors"
+          >
+            <LayoutList className="w-3.5 h-3.5" />
+            My items
+          </Link>
         </div>
 
         {/* Extraction result */}
@@ -59,19 +67,33 @@ export default async function ItemPage({
 
         {/* Generated listing — show card if ready, retry button if valuation exists but listing failed */}
         {data.listing ? (
-          <ListingCard listing={data.listing} />
+          <>
+            <ListingCard listing={data.listing} />
+            <ListingEditPanel
+              listing={data.listing}
+              itemId={data.item.id}
+              publications={data.publications}
+            />
+          </>
         ) : data.valuation ? (
           <RetryListingButton itemId={data.item.id} />
         ) : null}
 
-        {/* Bottom CTA */}
-        <div className="mt-12 text-center">
+        {/* Bottom CTAs */}
+        <div className="mt-12 flex items-center justify-center gap-6">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-sm font-medium text-zinc-400 hover:text-zinc-700 transition-colors"
           >
             <ImagePlus className="w-4 h-4" />
             Analyze another item
+          </Link>
+          <Link
+            href="/inventory"
+            className="inline-flex items-center gap-2 text-sm font-medium text-zinc-400 hover:text-zinc-700 transition-colors"
+          >
+            <LayoutList className="w-4 h-4" />
+            View all items
           </Link>
         </div>
       </div>
