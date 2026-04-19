@@ -104,6 +104,8 @@ def insert_generated_listing(item_id: str, listing: dict) -> dict:
         "suggested_price": listing.get("suggested_price"),
         "attributes_json": listing.get("attributes"),
         "generation_reasoning": listing.get("generation_reasoning"),
+        "item_specifics_json": listing.get("item_specifics") or None,
+        "photo_checklist_json": listing.get("photo_checklist") or None,
     }).execute()
     return result.data[0]
 

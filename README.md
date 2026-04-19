@@ -1,11 +1,11 @@
 # AfterBuy
 
-AfterBuy is a mobile-first AI ownership agent for post-purchase commerce.
+AfterBuy is a mobile-first AI wardrobe resale agent for post-purchase commerce.
 
-Upload or photograph something you own. AfterBuy identifies it, finds comparable market listings, estimates its resale value, generates a marketplace-ready listing, and lets you distribute it across selected channels — all in one flow.
+Upload or photograph something you own. AfterBuy identifies the item, estimates visible wear from the provided images, finds comparable market listings, adjusts resale value accordingly, generates a marketplace-ready listing, and lets you distribute it across selected channels — all in one flow.
 
 **Core flow:**
-photo upload or camera capture → item extraction → market comparables → resale valuation → generated listing → review/edit → channel distribution → inventory tracking
+photo upload or camera capture → item extraction + visible wear assessment → market comparables → wear-aware resale valuation → generated listing → review/edit → channel distribution → inventory tracking
 
 ---
 
@@ -63,22 +63,19 @@ Runs on http://localhost:8000
 
 ```env
 OPENAI_API_KEY=your_openai_api_key_here
+
 SUPABASE_URL=your_supabase_project_url_here
 SUPABASE_SERVICE_KEY=your_supabase_service_role_key_here
 SUPABASE_STORAGE_BUCKET=item-images
 
-# SerpApi for comparable market listings
 SERPAPI_API_KEY=your_serpapi_api_key_here
-
-# CORS — comma-separated. Defaults to http://localhost:3000 if unset.
-# For phone testing over Wi-Fi, add your laptop's LAN IP:
-# CORS_ORIGINS=http://localhost:3000,http://192.168.1.42:3000
 ```
 
 ### `frontend/.env.local`
 
 ```env
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url_here
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key_here
 ```
@@ -166,50 +163,9 @@ Create a public storage bucket named `item-images` in Supabase Storage.
 
 ---
 
-## Local Phone Testing (Same Wi-Fi)
+## Mobile Testing
 
-To test on your phone before deployment:
-
-### 1. Find your laptop's local IP
-
-```bash
-ipconfig getifaddr en0   # macOS Wi-Fi
-# Example output: 192.168.1.42
-```
-
-### 2. Update `frontend/.env.local`
-
-```
-NEXT_PUBLIC_BACKEND_URL=http://192.168.1.42:8000
-```
-
-### 3. Update `backend/.env`
-
-```
-CORS_ORIGINS=http://localhost:3000,http://192.168.1.42:3000
-```
-
-### 4. Run backend bound to all interfaces
-
-```bash
-cd backend
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### 5. Run frontend
-
-```bash
-cd frontend
-npm run dev
-```
-
-### 6. Open on phone
-
-Navigate to `http://192.168.1.42:3000` (replace with your actual IP). Both devices must be on the same Wi-Fi network.
-
-**Camera capture** (`Take photo`) triggers the native camera on iOS Safari and Android Chrome. Upload from library also works on both.
-
-To revert: remove `CORS_ORIGINS` from `backend/.env` and restore `NEXT_PUBLIC_BACKEND_URL=http://localhost:8000` in `frontend/.env.local`.
+For testing on a phone, deploy the frontend to Vercel (or use a tunneling tool like [ngrok](https://ngrok.com)) and point `NEXT_PUBLIC_BACKEND_URL` at your backend. Camera capture (`Take photo`) works natively on iOS Safari and Android Chrome.
 
 ---
 
@@ -230,17 +186,17 @@ Avoid: generic unbranded items, low-resolution images, images without a clear su
 
 ### Golden path demo script
 
-1. Open the app (homepage)
-2. Tap **Take photo** on phone, or **Upload photo** on desktop
-3. Select or photograph a branded jacket, sneaker, or bag
-4. Watch the staged processing: Uploading → Identifying → Finding comps → Estimating value → Generating listing
+1. Open the app on the homepage
+2. Tap **Take photo** (on phone) or **Upload photo** (on desktop)
+3. Select or photograph a branded wardrobe item such as a jacket, sneaker, bag, or hoodie
+4. Watch staged processing: Uploading → Identifying → Finding comps → Estimating value → Generating listing
 5. On the result page:
-   - Review extracted attributes and confidence badge
-   - Browse comparable market listings (linked to real sources)
-   - See valuation range and suggested listing price
+   - Review extracted attributes, visible wear assessment, and confidence badges
+   - Browse comparable market listings with prices and outbound links
+   - See the valuation range and suggested listing price
    - Read the generated marketplace-ready listing
 6. In the Review & Distribute panel:
-   - Optionally tap **Edit** to revise title, description, condition, or price
+   - Optionally tap **Edit** to revise the title, description, condition, or price
    - Select one or more channels (eBay, Poshmark, Depop, Facebook)
    - Tap **Distribute to N channels**
 7. Navigate to **My items** to see the inventory view with status badges
@@ -261,10 +217,11 @@ Avoid: generic unbranded items, low-resolution images, images without a clear su
 | Valuation engine | Real computation — weighted comp heuristic with IQR outlier removal |
 | Listing generation | Real — OpenAI GPT-4o |
 | Listing edit and persistence | Real — saved to Supabase |
-| Channel distribution | Simulated — generates a mock publication record per platform; no real marketplace API calls |
-| Inventory tracking | Real — reads from persisted item/publication records |
+| Channel distribution | Simulated — mock publication record per platform; no real marketplace API calls |
+| Inventory tracking | Real — reads from persisted item and publication records |
+| Wear assessment | OpenAI GPT-4o vision + backend heuristic aggregation |
 
-The distribution flow is intentionally simulated. Real marketplace publishing (eBay, Poshmark, etc.) requires seller account OAuth — out of scope for this MVP. The UI wording reflects this honestly: "Listing routing is simulated for selected channels."
+The distribution flow is intentionally simulated. Real marketplace publishing (eBay, Poshmark, etc.) requires seller account OAuth — out of scope for this MVP. The in-app copy reflects this honestly: "Listing routing is simulated for selected channels."
 
 ---
 
@@ -287,11 +244,12 @@ The distribution flow is intentionally simulated. Real marketplace publishing (e
 
 ## Known Limitations
 
-- **No authentication** — all items are shared in the same database. For a single-user demo this is fine.
-- **SerpApi dependency** — if SerpApi quota is exhausted or the key is invalid, comps will return empty and valuation/listing will not run. Keep an eye on your quota.
-- **Camera capture** requires HTTPS or localhost in some browsers. Over a LAN IP (`http://192.168.x.x:3000`), the camera button may fall back to gallery on some iOS versions. Use localhost or a deployed HTTPS URL for reliable camera access.
-- **Low-confidence items** — very blurry, generic, or unbranded items may return low-confidence extraction, skip comps, and not reach valuation. This is intentional graceful degradation.
+- **No authentication** — all items are shared in the same database. Fine for a single-user demo.
+- **SerpApi dependency** — if quota is exhausted or the key is invalid, comps return empty and valuation/listing will not run.
+- **Camera capture** requires HTTPS or localhost. Use a deployed URL or tunnel for reliable phone camera access.
+- **Low-confidence items** — blurry, generic, or unbranded images may return low-confidence extraction and skip comps and valuation. This is intentional graceful degradation.
 - **Channel distribution is simulated** — no real listings are created on any marketplace.
+- **Visible wear is image-based only** — AfterBuy estimates visible wear from the provided photos. It does not know hidden defects, odor, wash history, elasticity loss, or internal condition.
 
 ---
 

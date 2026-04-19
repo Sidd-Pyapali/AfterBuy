@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, ImagePlus, LayoutList } from "lucide-react";
 import ExtractionResult from "@/components/ExtractionResult";
+import WearAssessmentCard from "@/components/WearAssessmentCard";
 import CompsSection from "@/components/CompsSection";
 import ValuationCard from "@/components/ValuationCard";
 import ListingCard from "@/components/ListingCard";
@@ -58,6 +59,11 @@ export default async function ItemPage({
 
         {/* Extraction result */}
         <ExtractionResult item={data.item} />
+
+        {/* Visible wear assessment */}
+        {data.item.extracted_metadata?.wear_assessment && (
+          <WearAssessmentCard wear={data.item.extracted_metadata.wear_assessment} />
+        )}
 
         {/* Market comparables */}
         <CompsSection comps={data.comps} confidenceScore={data.item.confidence_score} />

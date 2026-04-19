@@ -32,17 +32,20 @@ _SYSTEM_PROMPT = """You are an expert at writing factual, resale-ready marketpla
 
 ## Description rules
 - 2 to 4 sentences
-- Structure: brief factual overview → condition → note to see photos
+- Structure: brief factual overview → visible condition → note to see photos
 - Neutral, honest tone — written as a careful human seller would
 - No invented measurements, exact materials, or specifications not provided
 - No hype language ("amazing", "rare", "incredible deal")
 - Do not repeat the title verbatim
+- If wear information is provided, weave it naturally into the description
 
 ## Condition note rules
 - 1 to 2 sentences, honest and specific
-- Describe visible condition accurately (e.g. "Shows light pilling on cuffs" vs just "Used")
-- If condition info is limited, write a conservative general note
-- Do not overclaim ("pristine", "perfect") unless condition strongly supports it"""
+- If visible wear signals are provided, reference the specific zones (e.g. "Shows light pilling at the cuffs and collar")
+- If no wear signals are provided or wear is unknown, write a conservative general note based on the stated condition
+- Do not overclaim ("pristine", "perfect") unless condition strongly supports it
+- Do not fabricate wear that was not described — only describe what is provided
+- Phrase wear as visible from photos (e.g. "visible in provided photos") rather than claiming hidden knowledge"""
 
 
 # Category detection ──────────────────────────────────────────────────────────
@@ -111,7 +114,6 @@ def _build_item_specifics(item: dict) -> dict:
         "Condition": item.get("condition"),
     }
 
-    # Category-specific extras extracted conservatively from notable_details
     if cat_key == "drinkware":
         materials = ("stainless", "plastic", "aluminum", "ceramic", "glass", "titanium")
         for nl, n in zip(notable_lower, notable):
@@ -126,7 +128,13 @@ def _build_item_specifics(item: dict) -> dict:
                 base["Closure"] = n
                 break
 
-    # Strip null and empty values
+    # Add visible wear level if meaningful
+    wear = metadata.get("wear_assessment") or {}
+    wear_level = (wear.get("wear_level") or "").lower()
+    if wear_level in ("none", "light", "moderate", "heavy"):
+        label_map = {"none": "No visible wear", "light": "Light wear", "moderate": "Moderate wear", "heavy": "Heavy wear"}
+        base["Visible Wear"] = label_map[wear_level]
+
     return {k: v for k, v in base.items() if v and str(v).strip()}
 
 
@@ -208,6 +216,31 @@ def _build_listing_context(item: dict, valuation: dict | None) -> str:
     if notable:
         parts.append(f"Notable details: {', '.join(notable)}")
 
+    # Include visible wear context when meaningful
+    wear = metadata.get("wear_assessment") or {}
+    wear_level = (wear.get("wear_level") or "unknown").lower()
+    wear_confidence = float(wear.get("wear_confidence") or 0)
+    wear_summary = wear.get("wear_summary") or ""
+    wear_signals: list[dict] = wear.get("wear_signals") or []
+
+    if wear_level not in ("unknown",) and wear_confidence >= 0.35:
+        parts.append(f"Visible wear level: {wear_level}")
+        if wear_summary:
+            parts.append(f"Wear summary: {wear_summary}")
+        if wear_signals:
+            signal_lines = []
+            for s in wear_signals[:4]:  # cap at 4 signals to keep prompt tight
+                zone = s.get("zone", "")
+                signal = s.get("signal", "")
+                severity = s.get("severity", "")
+                sig_confidence = float(s.get("confidence") or 0)
+                if zone and signal and sig_confidence >= 0.40:
+                    signal_lines.append(f"{zone}: {severity} {signal}")
+            if signal_lines:
+                parts.append(f"Visible wear signals: {', '.join(signal_lines)}")
+    elif wear_level == "none" and wear_confidence >= 0.5:
+        parts.append("Visible wear: none visible in photos")
+
     if valuation:
         price = valuation.get("suggested_listing_price")
         if price:
@@ -227,7 +260,8 @@ def generate_listing(item: dict, valuation: dict | None) -> dict:
     prompt = (
         "Generate a marketplace listing for the following item:\n\n"
         f"{item_context}\n\n"
-        "Write factual, grounded copy based only on the details above."
+        "Write factual, grounded copy based only on the details above. "
+        "If wear signals are provided, reference them honestly in the condition note."
     )
 
     response = client.beta.chat.completions.parse(

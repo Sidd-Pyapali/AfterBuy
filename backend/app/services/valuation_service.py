@@ -1,13 +1,14 @@
 """
-Valuation engine: computes a resale price estimate from persisted market comps.
+Valuation engine: computes a wear-aware resale price estimate from persisted market comps.
 
 Algorithm steps (each independently reviewable):
   1. Filter comps below a similarity threshold
   2. Remove price outliers via IQR
   3. Compute similarity-weighted average price
   4. Apply a condition discount multiplier
-  5. Derive low / mid / high bounds
-  6. Set confidence and reason from comp count + avg similarity
+  5. Apply a conservative visible-wear adjustment
+  6. Derive low / mid / high bounds
+  7. Set confidence and reason from comp count + avg similarity + wear
 """
 
 # Comps below this similarity are too irrelevant to use.
@@ -23,6 +24,53 @@ _CONDITION_MULTIPLIERS: dict[str, float] = {
     "poor": 0.40,
 }
 _DEFAULT_CONDITION_MULTIPLIER = 0.75  # used when condition is unknown
+
+# Minimum wear_confidence to apply any wear adjustment.
+# Below this threshold the image evidence is too weak to adjust pricing.
+_MIN_WEAR_CONFIDENCE = 0.40
+
+# Maximum wear penalty we allow, expressed as a fraction reduction.
+# Caps at 15% so a single uncertain assessment never tanks the price.
+_MAX_WEAR_PENALTY = 0.15
+
+
+def _get_wear_adjustment(item: dict) -> tuple[float, str | None]:
+    """
+    Returns (adjustment_factor, wear_description_for_reason).
+    Factor is between (1 - _MAX_WEAR_PENALTY) and 1.0.
+    Returns (1.0, None) when wear is unknown, none, or low-confidence.
+    """
+    metadata = item.get("extracted_metadata_json") or {}
+    wear = metadata.get("wear_assessment")
+    if not wear:
+        return 1.0, None
+
+    wear_level = (wear.get("wear_level") or "unknown").lower()
+    wear_confidence = float(wear.get("wear_confidence") or 0)
+    raw_factor = float(wear.get("pricing_adjustment_factor") or 1.0)
+
+    # No adjustment for unknown/none wear or low-confidence assessments
+    if wear_level in ("none", "unknown") or wear_confidence < _MIN_WEAR_CONFIDENCE:
+        return 1.0, None
+
+    # Scale the discount by confidence to stay conservative.
+    # e.g., raw_factor=0.85 (15% off), confidence=0.65 → penalty = 0.15 * 0.65 = 0.0975
+    raw_penalty = 1.0 - raw_factor
+    scaled_penalty = raw_penalty * wear_confidence
+    # Cap at max allowed penalty
+    capped_penalty = min(scaled_penalty, _MAX_WEAR_PENALTY)
+    adjusted_factor = round(1.0 - capped_penalty, 4)
+
+    level_labels = {
+        "light": "light visible wear",
+        "moderate": "moderate visible wear",
+        "heavy": "heavy visible wear",
+    }
+    description = level_labels.get(wear_level)
+    if description is None:
+        return 1.0, None
+
+    return adjusted_factor, description
 
 
 def compute_valuation(item: dict, comps: list[dict]) -> dict:
@@ -55,7 +103,6 @@ def compute_valuation(item: dict, comps: list[dict]) -> dict:
     if len(pairs) >= 4:
         pairs = _remove_outliers(pairs)
         if not pairs:
-            # Edge case: IQR removed everything; use originals
             pairs = [(float(c.get("comp_price") or 0), float(c.get("similarity_score") or 0.5))
                      for c in working if (c.get("comp_price") or 0) > 0]
 
@@ -73,10 +120,13 @@ def compute_valuation(item: dict, comps: list[dict]) -> dict:
     condition = (item.get("condition") or "").lower().strip()
     factor = _CONDITION_MULTIPLIERS.get(condition, _DEFAULT_CONDITION_MULTIPLIER)
 
-    mid = round(weighted_avg * factor, 2)
+    # Step 5 — visible wear adjustment (conservative, image-based only)
+    wear_factor, wear_desc = _get_wear_adjustment(item)
 
-    # Step 5 — low / high bounds from the spread of adjusted prices
-    adjusted = sorted(p * factor for p in prices)
+    mid = round(weighted_avg * factor * wear_factor, 2)
+
+    # Step 6 — low / high bounds from the spread of adjusted prices
+    adjusted = sorted(p * factor * wear_factor for p in prices)
     n = len(adjusted)
 
     if n >= 2:
@@ -95,10 +145,14 @@ def compute_valuation(item: dict, comps: list[dict]) -> dict:
     # Suggested listing price — slightly below mid to be competitive, never below low
     suggested = max(round(mid * 0.97, 2), low)
 
-    # Step 6 — confidence and reason
+    # Step 7 — confidence and reason
     avg_sim = sum(similarities) / len(similarities) if similarities else 0.0
     comp_count = len(prices)
-    confidence, reason = _confidence_and_reason(comp_count, avg_sim)
+    confidence, reason = _confidence_and_reason(comp_count, avg_sim, wear_desc)
+
+    valuation_method = "comp_weighted_heuristic"
+    if wear_factor < 1.0:
+        valuation_method = "comp_weighted_wear_adjusted_heuristic"
 
     return {
         "estimated_low": low,
@@ -107,7 +161,7 @@ def compute_valuation(item: dict, comps: list[dict]) -> dict:
         "suggested_listing_price": suggested,
         "confidence": confidence,
         "valuation_reason": reason,
-        "valuation_method": "comp_weighted_heuristic",
+        "valuation_method": valuation_method,
         "comp_count": comp_count,
     }
 
@@ -121,7 +175,6 @@ def _remove_outliers(
     q1 = prices[n // 4]
     q3 = prices[(3 * n) // 4]
     iqr = q3 - q1
-    # If all prices are identical, IQR is 0 — skip filtering
     if iqr == 0:
         return pairs
     lower = q1 - 1.5 * iqr
@@ -130,21 +183,25 @@ def _remove_outliers(
     return filtered if len(filtered) >= 2 else pairs
 
 
-def _confidence_and_reason(comp_count: int, avg_similarity: float) -> tuple[str, str]:
+def _confidence_and_reason(
+    comp_count: int, avg_similarity: float, wear_desc: str | None
+) -> tuple[str, str]:
+    wear_clause = f" Adjusted conservatively for {wear_desc} shown in the provided photos." if wear_desc else ""
+
     if comp_count >= 5 and avg_similarity >= 0.50:
         return (
             "high",
-            f"Based on {comp_count} strong comparable market listings.",
+            f"Based on {comp_count} strong comparable market listings.{wear_clause}",
         )
     if comp_count >= 3 or (comp_count >= 2 and avg_similarity >= 0.35):
         return (
             "medium",
             f"Based on {comp_count} comparable listing{'s' if comp_count != 1 else ''} "
-            "with moderate similarity.",
+            f"with moderate similarity.{wear_clause}",
         )
     plural = "s" if comp_count != 1 else ""
     return (
         "low",
         f"Based on {comp_count} comparable listing{plural}. "
-        "Estimate has higher uncertainty due to limited exact matches.",
+        f"Estimate has higher uncertainty due to limited exact matches.{wear_clause}",
     )

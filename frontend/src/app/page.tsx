@@ -24,11 +24,12 @@ export default function HomePage() {
           {/* Hero */}
           <div className="mb-10 text-center">
             <h1 className="font-display text-4xl text-zinc-900 leading-tight">
-              Find out what your<br />item is worth
+              Turn your closet into<br />resale-ready listings
             </h1>
             <p className="mt-4 text-[15px] text-zinc-500 leading-relaxed max-w-xs mx-auto">
-              Upload or photograph an item you own. We&apos;ll identify it, find
-              comparable listings, and build a marketplace-ready resale listing.
+              Photograph something from your wardrobe. AfterBuy identifies it,
+              estimates wear, prices it against real comps, and lists it across
+              marketplaces — all in one flow.
             </p>
           </div>
 

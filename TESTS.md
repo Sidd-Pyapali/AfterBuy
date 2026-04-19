@@ -444,7 +444,51 @@ Expected:
 
 ---
 
-## 12. Demo Readiness Checklist
+## 12. Phase 9 Tests: Wardrobe Wear Detection and Wear-Aware Resale
+
+### P9-T1 Visible Wear Extraction Test
+Use a wardrobe item image with visible wear cues.
+
+Expected:
+- extraction returns a structured wear assessment
+- wear fields are not missing
+- wear output is grounded in visible evidence
+
+### P9-T2 Low-Information Wear Test
+Use a blurry, distant, or low-quality wardrobe image.
+
+Expected:
+- wear confidence is lower
+- wear_level may be `unknown`
+- no strong unsupported wear claims are made
+
+### P9-T3 Wear-Aware Valuation Test
+Use an item with visible wear and compare valuation behavior.
+
+Expected:
+- wear-aware adjustment is applied conservatively
+- valuation reason reflects visible wear when relevant
+- pricing is not driven into absurdly low values
+
+### P9-T4 Wear-Aware Listing Test
+Expected:
+- listing condition language reflects visible wear honestly
+- listing does not overclaim condition
+- structured item specifics appear realistic
+- recommended photo checklist appears and fits the category
+
+### P9-T5 UI Wear Section Test
+Expected:
+- result page shows visible wear clearly
+- section is readable and not cluttered
+- pricing adjustment explanation is understandable
+
+### Phase 9 Exit Test
+Known wardrobe items must produce believable visible wear assessment, wear-aware valuation, and wear-aware listing output without breaking the existing golden path.
+
+---
+
+## 13. Demo Readiness Checklist
 
 The project is demo-ready only if all are true:
 
@@ -466,7 +510,7 @@ The project is demo-ready only if all are true:
 
 ---
 
-## 13. Required Manual Test Data
+## 14. Required Manual Test Data
 
 Prepare and keep ready:
 - 2 to 3 good fashion item images
@@ -482,7 +526,7 @@ Avoid obscure items for the main demo.
 
 ---
 
-## 14. Non-Negotiable Verification Before Final Demo
+## 15. Non-Negotiable Verification Before Final Demo
 
 Before showing anyone:
 1. run frontend

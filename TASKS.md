@@ -224,6 +224,15 @@ Create the first magical user interaction: upload an item image and receive stru
   - visible_condition
   - notable_details
   - confidence
+  - visible wear assessment including:
+    - wear_level
+    - wear_confidence
+    - wear_summary
+    - pricing_adjustment_factor
+    - wear_signals
+- treat wear as visible image-based evidence only
+- lower wear confidence when image quality is poor or relevant garment zones are not visible
+- avoid hallucinated condition issues
 - handle uncertainty conservatively
 - avoid hallucinated specifics
 
@@ -320,7 +329,7 @@ Normalize each comp into a clean internal shape:
 ## 7. Phase 4: Valuation Engine
 
 ### Objective
-Produce a credible resale value estimate from the item and comparable listings.
+Produce a credible wear-aware resale value estimate from the item, visible wear assessment, and comparable listings.
 
 ### Required Tasks
 
@@ -343,6 +352,15 @@ Compute:
 - estimated_mid
 - estimated_high
 - suggested_listing_price
+
+#### T4.3a Wear-aware valuation adjustment
+Apply a conservative wear adjustment using the visible wear assessment.
+
+Suggested behavior:
+- use wear level and pricing adjustment factor from extraction metadata
+- apply the wear adjustment after comp-based estimation
+- keep the adjustment explainable and reviewable
+- do not over-penalize low-confidence wear assessments
 
 #### T4.4 Confidence logic
 Set confidence to:
@@ -378,8 +396,9 @@ Show:
 - keep math understandable and reviewable
 
 ### Deliverables
-- working valuation engine
+- working wear-aware valuation engine
 - valuation data stored and displayed
+- valuation reason reflects visible wear when relevant
 
 ### Gate 4 Exit Criteria
 - valuation is produced for known demo items
@@ -391,7 +410,7 @@ Show:
 ## 8. Phase 5: Listing Generation
 
 ### Objective
-Generate marketplace-ready listing content using extracted metadata and valuation.
+Generate marketplace-ready listing content using extracted metadata, visible wear assessment, and valuation.
 
 ### Required Tasks
 
@@ -412,11 +431,20 @@ The prompt must instruct the model to:
 - avoid hype
 - produce clean marketplace-style copy
 
+#### T5.2a Wear-aware listing realism
+Ensure listing generation:
+- uses visible wear information when supported
+- produces realistic resale-style condition language
+- includes structured item specifics
+- includes a recommended photo checklist for better resale posting
+- does not overclaim condition certainty
+
 #### T5.3 Required output fields
 - title
 - description
 - condition note
-- optional tags or attributes JSON
+- structured item specifics
+- recommended photo checklist
 
 #### T5.4 Persistence
 Store generated listing in DB.
@@ -435,8 +463,10 @@ Provide at least simple copy/export actions.
 ### Constraints
 - do not generate fake authenticity claims
 - do not fabricate measurements or material details
+- do not fabricate hidden or invisible wear
 - do not use spammy or salesy tone
 - output should feel suitable for real marketplace use
+- item specifics must be grounded and category-aware
 
 ### Deliverables
 - high-quality listing generation
@@ -635,21 +665,106 @@ Ensure clean navigation between:
 
 ---
 
-## 12. Final Demo Preparation Tasks
+## 12. Phase 9: Wardrobe Wear Detection and Wear-Aware Resale
 
-### T9.1 Seed demo data
+### Objective
+Make AfterBuy wardrobe-native by estimating visible wear from images, applying that wear to pricing, and improving listing realism accordingly.
+
+### Required Tasks
+
+#### T9.1 Visible wear assessment design
+Create a structured wear assessment model that supports:
+- wear_level
+- wear_confidence
+- wear_summary
+- pricing_adjustment_factor
+- wear_signals
+
+Wear signals should include:
+- zone
+- signal
+- severity
+- confidence
+
+#### T9.2 Category-aware wear logic
+Implement wardrobe-specific inspection profiles for categories such as:
+- outerwear
+- tops
+- pants
+- shoes
+- bags
+- accessories
+
+Each profile should define relevant wear zones and likely wear signals.
+
+#### T9.3 Extraction integration
+Extend the image extraction step to return visible wear assessment alongside item metadata.
+
+Wear detection must:
+- be image-based only
+- be conservative
+- return lower confidence when evidence is weak
+- avoid hidden-condition claims
+
+#### T9.4 Persistence
+Persist visible wear assessment in a stable way, preferably within extracted item metadata unless a separate field is clearly necessary.
+
+#### T9.5 Wear-aware valuation
+Update the valuation engine to:
+- apply conservative pricing adjustments based on wear
+- explain that wear was considered when relevant
+- avoid large penalties for uncertain wear assessments
+
+#### T9.6 Wear-aware listing generation
+Update listing generation to:
+- reflect visible wear honestly in condition language
+- generate realistic item specifics
+- generate a recommended photo checklist
+- remain concise and marketplace-appropriate
+
+#### T9.7 Result page UI
+Add a visible wear section to the result page showing:
+- wear level
+- wear summary
+- relevant wear zones/signals
+- pricing adjustment applied if relevant
+
+### Constraints
+- visible wear must be framed as image-based only
+- do not claim hidden condition knowledge
+- do not infer wash history, odor, softness loss, or invisible damage
+- keep all changes grounded and explainable
+- do not destabilize the existing golden path
+
+### Deliverables
+- visible wear assessment integrated into extraction
+- wear-aware valuation
+- wear-aware listing generation
+- UI support for visible wear
+
+### Gate 9 Exit Criteria
+- known wardrobe items show believable visible wear output
+- wear affects pricing conservatively
+- listings reflect wear honestly
+- low-information images degrade gracefully
+
+---
+
+## 13. Final Demo Preparation Tasks
+
+### T10.1 Seed demo data
 Prepare a few known-good item images.
 
-### T9.2 Validate golden path
+### T10.2 Validate golden path
 Run one full demo path multiple times.
 
-### T9.3 Polish visible text
+### T10.3 Polish visible text
 Refine labels, headings, button copy, and empty states.
 
-### T9.4 Remove dead code
+### T10.4 Remove dead code
 Delete abandoned experiments, unused routes, and unused components.
 
-### T9.5 Final README update
+### T10.5 Final README update
 Document:
 - what AfterBuy does
 - tech stack
@@ -657,20 +772,20 @@ Document:
 - environment variables
 - any limitations
 
-### T9.6 Validate publish demo path
+### T10.6 Validate publish demo path
 Run one full review/edit → mock publish → status tracking flow.
 
-### T9.7 Validate phone camera path
+### T10.7 Validate phone camera path
 Test upload from:
 - library
 - camera capture on phone
 
-### T9.8 Validate deployed demo
+### T10.8 Validate deployed demo
 Confirm the deployed frontend works on a phone-sized viewport and that the main demo path is stable.
 
 ---
 
-## 13. Stop Conditions
+## 14. Stop Conditions
 
 Claude must stop and ask for direction if:
 - an external API is blocked

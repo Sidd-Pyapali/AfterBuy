@@ -4,13 +4,14 @@
 
 You are helping build AfterBuy, a hackathon MVP for the Autonomous Agents track.
 
-AfterBuy is a mobile-first AI ownership agent that:
-- accepts a photo of an owned item
+AfterBuy is a mobile-first AI wardrobe resale agent that:
+- accepts a photo of an owned wardrobe item
 - identifies the item using OpenAI
+- estimates visible wear from the provided images
 - fetches comparable market listings from a market data provider
-- estimates resale value
+- estimates resale value using comps and visible wear
 - generates a marketplace-ready listing
-- optionally publishes to a supported marketplace
+- optionally distributes that listing across selected channels
 
 Your job is to implement this product in tightly scoped phases without going outside the defined product and engineering boundaries.
 
@@ -223,6 +224,12 @@ Expected extraction fields:
 - visible_condition
 - notable_details
 - confidence
+- visible wear assessment including:
+  - wear_level
+  - wear_confidence
+  - wear_summary
+  - pricing_adjustment_factor
+  - wear_signals
 
 If the model is uncertain, lower confidence or use null-like values rather than inventing facts.
 
@@ -241,6 +248,39 @@ Never:
 - invent authenticity guarantees
 - invent SKU or collection details
 - use spammy text like “must see” or “rare find” unless explicitly justified
+
+## 9A. Visible Wear Rules
+
+Visible wear must be treated as:
+- image-based only
+- conservative
+- explainable
+- confidence-aware
+
+The system may estimate:
+- wear_level
+- wear_confidence
+- wear_summary
+- wear_signals
+- pricing_adjustment_factor
+
+The system must not pretend to know:
+- hidden defects
+- odor
+- wash history
+- softness loss
+- invisible structural damage
+- true age of the garment
+
+If image quality is weak or important areas are not visible:
+- lower confidence
+- return unknown or weak wear outputs
+- avoid strong pricing penalties
+
+Wear output should improve:
+- valuation realism
+- listing condition language
+- recommended photo guidance
 
 ---
 
@@ -332,6 +372,7 @@ You must work in phases.
 7. result page assembly
 8. review, edit, and mock marketplace publish
 9. inventory, listing tracking, camera capture, and polish
+10. wardrobe wear detection and wear-aware resale
 
 Do not skip ahead.
 

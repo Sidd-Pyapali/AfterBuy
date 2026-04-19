@@ -210,7 +210,27 @@ Form-data:
         "quilted pattern",
         "zip front"
       ],
-      "confidence": 0.82
+      "confidence": 0.82,
+      "wear_assessment": {
+        "wear_level": "light",
+        "wear_confidence": 0.74,
+        "wear_summary": "Light visible wear around the cuffs and zipper area.",
+        "pricing_adjustment_factor": 0.92,
+        "wear_signals": [
+          {
+            "zone": "cuffs",
+            "signal": "fraying",
+            "severity": "light",
+            "confidence": 0.72
+          },
+          {
+            "zone": "zipper_area",
+            "signal": "fading",
+            "severity": "light",
+            "confidence": 0.66
+          }
+        ]
+      }
     }
   },
   "processing": {
@@ -276,6 +296,9 @@ Form-data:
 - Extraction output must be structured and grounded
 - If extraction is partially uncertain, still return best-effort fields with lower confidence
 - Do not fail just because brand is unknown
+- extraction may include a visible wear assessment for wardrobe-relevant categories
+- visible wear must be based only on image-supported evidence
+- weak or low-information images should reduce wear confidence rather than force a confident wear label
 
 ## 7. Market Comparable Search
 
@@ -410,7 +433,7 @@ This should not be treated as an error if the item exists but no comps are found
 
 #### Purpose
 
-Compute a valuation range and suggested listing price using comps and extracted item metadata.
+Compute a wear-aware valuation range and suggested listing price using comps, extracted item metadata, and visible wear assessment.
 
 #### Request Body
 
@@ -427,13 +450,13 @@ Compute a valuation range and suggested listing price using comps and extracted 
   "item_id": "item_123",
   "valuation": {
     "id": "valuation_123",
-    "estimated_low": 68.0,
-    "estimated_mid": 82.0,
-    "estimated_high": 95.0,
-    "suggested_listing_price": 84.0,
+    "estimated_low": 62.0,
+    "estimated_mid": 76.0,
+    "estimated_high": 90.0,
+    "suggested_listing_price": 78.0,
     "confidence": "medium",
-    "valuation_reason": "Based on 5 comparable market listings with moderate title and brand similarity.",
-    "valuation_method": "comp_weighted_heuristic",
+    "valuation_reason": "Based on 5 comparable market listings and adjusted conservatively for light visible wear in the provided photos.",
+    "valuation_method": "comp_weighted_wear_adjusted_heuristic",
     "comp_count": 5
   }
 }
@@ -496,7 +519,7 @@ Compute a valuation range and suggested listing price using comps and extracted 
 
 #### Purpose
 
-Generate a marketplace-ready title and description using extracted metadata and valuation.
+Generate a marketplace-ready title and description using extracted metadata, visible wear assessment, and valuation.
 
 #### Request Body
 
@@ -523,16 +546,26 @@ Do not overfit listing copy to many marketplace differences for the MVP.
   "listing": {
     "id": "listing_123",
     "platform": "generic",
-    "title": "The North Face Black Puffer Jacket - Pre-Owned",
-    "description": "Pre-owned black The North Face puffer jacket in good condition. Quilted design with zip front. Great everyday outerwear piece with visible signs of normal wear.",
-    "condition_note": "Good pre-owned condition with normal visible wear.",
-    "suggested_price": 84.0,
+    "title": "The North Face Black Puffer Jacket",
+    "description": "Pre-owned black The North Face puffer jacket with quilted construction and zip front. Visible condition appears good overall with light wear around the cuffs and zipper area shown in the provided photos. See photos for branding, finish, and overall cosmetic condition.",
+    "condition_note": "Pre-owned item in good visible condition with light wear shown in the provided photos.",
+    "suggested_price": 78.0,
     "attributes": {
       "brand": "The North Face",
       "category": "outerwear",
+      "type": "puffer jacket",
       "color": "black",
-      "condition": "good"
-    }
+      "condition": "good",
+      "closure": "zip front"
+    },
+    "photo_checklist": [
+      "Front view",
+      "Back view",
+      "Collar close-up",
+      "Cuff close-up",
+      "Branding or tag photo",
+      "Any visible wear or flaws"
+    ]
   }
 }
 ```
@@ -563,10 +596,10 @@ Do not overfit listing copy to many marketplace differences for the MVP.
 }
 ```
 
-## 9.2 `PATCH /listing/{item_id}`
+## 9.2 `PATCH /listing/{listing_id}`
 
 ### Purpose
-Update the generated listing content after user review/edit.
+Update the generated listing content after user review/edit using the generated listing record ID.
 
 ### Request Body
 
@@ -643,7 +676,27 @@ Return all relevant data needed to render the final item result page.
         "quilted pattern",
         "zip front"
       ],
-      "confidence": 0.82
+      "confidence": 0.82,
+      "wear_assessment": {
+        "wear_level": "light",
+        "wear_confidence": 0.74,
+        "wear_summary": "Light visible wear around the cuffs and zipper area.",
+        "pricing_adjustment_factor": 0.92,
+        "wear_signals": [
+          {
+            "zone": "cuffs",
+            "signal": "fraying",
+            "severity": "light",
+            "confidence": 0.72
+          },
+          {
+            "zone": "zipper_area",
+            "signal": "fading",
+            "severity": "light",
+            "confidence": 0.66
+          }
+        ]
+      }
     }
   },
   "comps": [
@@ -661,28 +714,38 @@ Return all relevant data needed to render the final item result page.
   ],
   "valuation": {
     "id": "valuation_123",
-    "estimated_low": 68.0,
-    "estimated_mid": 82.0,
-    "estimated_high": 95.0,
-    "suggested_listing_price": 84.0,
+    "estimated_low": 62.0,
+    "estimated_mid": 76.0,
+    "estimated_high": 90.0,
+    "suggested_listing_price": 78.0,
     "confidence": "medium",
-    "valuation_reason": "Based on 5 comparable market listings with moderate title and brand similarity.",
-    "valuation_method": "comp_weighted_heuristic",
+    "valuation_reason": "Based on 5 comparable market listings and adjusted conservatively for light visible wear in the provided photos.",
+    "valuation_method": "comp_weighted_wear_adjusted_heuristic",
     "comp_count": 5
   },
   "listing": {
     "id": "listing_123",
     "platform": "generic",
-    "title": "The North Face Black Puffer Jacket - Pre-Owned",
-    "description": "Pre-owned black The North Face puffer jacket in good condition. Quilted design with zip front. Great everyday outerwear piece with visible signs of normal wear.",
-    "condition_note": "Good pre-owned condition with normal visible wear.",
-    "suggested_price": 84.0,
+    "title": "The North Face Black Puffer Jacket",
+    "description": "Pre-owned black The North Face puffer jacket with quilted construction and zip front. Visible condition appears good overall with light wear around the cuffs and zipper area shown in the provided photos. See photos for branding, finish, and overall cosmetic condition.",
+    "condition_note": "Pre-owned item in good visible condition with light wear shown in the provided photos.",
+    "suggested_price": 78.0,
     "attributes": {
       "brand": "The North Face",
       "category": "outerwear",
+      "type": "puffer jacket",
       "color": "black",
-      "condition": "good"
-    }
+      "condition": "good",
+      "closure": "zip front"
+    },
+    "photo_checklist": [
+      "Front view",
+      "Back view",
+      "Collar close-up",
+      "Cuff close-up",
+      "Branding or tag photo",
+      "Any visible wear or flaws"
+    ]
   },
   "publication": null
 }
@@ -962,6 +1025,13 @@ Support stepwise logic internally if useful, but expose a smooth orchestrated fl
   - `estimated_low <= estimated_mid <= estimated_high`
 - listing generation must return non-empty title and description
 - publication responses must clearly distinguish real vs mock
+
+### Visible Wear Validation
+
+- visible wear outputs must remain structured
+- wear must be described as image-based only
+- low-information inputs should produce lower wear confidence or unknown wear level
+- wear-aware pricing must remain conservative
 
 ## 16. Security and Secret Handling
 

@@ -6,7 +6,7 @@
 AfterBuy
 
 ### One-Line Description
-AfterBuy is a mobile-first AI ownership agent that helps users identify what they own, estimate resale value, generate a marketplace-ready listing, review and edit it, and track mock multi-market resale actions in one place.
+AfterBuy is a mobile-first AI wardrobe resale agent that helps users identify items they own, estimate visible wear from images, price items for resale using market comps and wear-aware adjustments, generate a marketplace-ready listing, review and edit it, and track resale actions in one place.
 
 ### Core Product Thesis
 Most commerce products optimize the moment before checkout.
@@ -26,13 +26,13 @@ The product is not just generating copy.
 It maintains item state, gathers external data, reasons over it, and prepares a concrete action.
 The core agentic behavior is:
 
-1. ingest an owned item
-2. identify it
-3. find market context
-4. estimate value
-5. decide a recommended listing price
-6. generate a listing payload
-7. optionally publish to a marketplace where APIs exist
+1. ingest a wardrobe item the user already owns
+2. identify the item from images
+3. estimate visible wear from the provided photos
+4. find market context
+5. adjust resale value based on comps and visible wear
+6. generate a marketplace-ready listing payload
+7. optionally distribute that listing across selected channels
 
 This is not a passive dashboard.
 It is a guided post-purchase ownership agent.
@@ -84,7 +84,7 @@ Frame this as:
 ## Primary Goal
 Deliver a polished mobile-first web app demo that proves the full flow:
 
-photo upload → item extraction → market comparables → resale valuation → generated listing → optional marketplace publish
+photo upload → item extraction + visible wear assessment → market comparables → wear-aware resale valuation → generated listing → optional marketplace distribution
 
 ## Secondary Goals
 - store uploaded items and generated outputs
@@ -108,6 +108,9 @@ This MVP is not trying to:
 - show lightweight listing tracking inside AfterBuy
 - support phone capture as well as image upload
 - make the UI feel closer to a premium consumer shopping product
+- make the product feel wardrobe-native, not like a generic listing generator
+- surface visible wear clearly and honestly in both pricing and listing output
+- guide the user toward better resale photos for wardrobe items
 
 ---
 
@@ -116,16 +119,16 @@ This MVP is not trying to:
 ### MVP Must Deliver
 A user can:
 1. open the app on a mobile-sized viewport
-2. upload a photo of an item they own
+2. upload or photograph a wardrobe item they already own
 3. have the system identify the item using OpenAI
 4. see extracted attributes such as category, brand, title guess, color, condition
-5. have the system fetch comparable listings from a market data provider
-6. see a valuation range and suggested listing price
-7. generate a resale listing with title and description
-8. review and edit the generated listing before publish
-9. copy or export the generated listing
-10. optionally publish to selected marketplaces through a clearly labeled mock publish flow if real publishing is not feasible
-11. optionally view uploaded items and listing/publication state in a lightweight inventory dashboard
+5. see a visible wear assessment based on the provided photos
+6. have the system fetch comparable listings from a market data provider
+7. see a wear-aware valuation range and suggested listing price
+8. generate a resale listing with title, description, condition note, and structured specifics
+9. review and edit the generated listing before distribution
+10. optionally distribute to selected marketplaces through a clearly labeled simulated flow if real publishing is not feasible
+11. optionally view uploaded items and listing/distribution state in a lightweight inventory dashboard
 
 ### MVP Success Standard
 The MVP is successful if one golden path works smoothly and convincingly from beginning to end.
@@ -137,7 +140,8 @@ Preferred demo item types:
 - jacket
 - sneaker
 - bag
-- other visually recognizable fashion item
+- hoodie
+- other visually recognizable wardrobe item with clearly visible condition details
 
 Why:
 - easier image recognition
@@ -276,6 +280,19 @@ The system consists of:
 - persist valuation and listing records
 - optionally publish to a supported marketplace
 
+## Wear Assessment Layer
+AfterBuy should include a visible wear assessment layer for wardrobe items.
+
+This layer should:
+- inspect wardrobe-relevant wear zones based on item type
+- detect visible wear signals conservatively
+- estimate wear severity and confidence
+- produce a pricing adjustment factor
+- improve listing realism and photo guidance
+
+This is not a claim about true total condition.
+It is an estimate of visible wear from the provided images only.
+
 ## Persistence Responsibilities
 Supabase should store:
 - item records
@@ -313,6 +330,22 @@ Suggested fields:
 - condition
 - confidence_score
 - extracted_metadata_json
+
+### Wear Assessment Storage
+Visible wear assessment should be stored inside `extracted_metadata_json` unless a separate field is clearly necessary.
+
+Suggested nested structure:
+- wear_level
+- wear_confidence
+- wear_summary
+- pricing_adjustment_factor
+- wear_signals
+
+Each wear signal may include:
+- zone
+- signal
+- severity
+- confidence
 
 ## market_comps
 Represents normalized comparable listings found on a marketplace.
@@ -508,6 +541,16 @@ Prefer simple, robust heuristics over fake sophistication.
 - confidence
 - valuation_reason
 
+## Wear-Aware Adjustment
+The valuation engine may apply a conservative visible-wear adjustment after comp-based estimation.
+
+Suggested behavior:
+- derive a wear adjustment factor from visible wear assessment
+- apply that factor after comp weighting and condition heuristics
+- reflect the adjustment honestly in the valuation reason
+
+This adjustment should remain conservative and should never pretend to know hidden condition issues.
+
 ## Confidence Levels
 - high: many strong matches
 - medium: some decent but imperfect matches
@@ -538,6 +581,26 @@ Required fields:
 
 If uncertain:
 - return null or low-confidence values rather than hallucinating
+
+### Visible Wear Assessment Requirements
+The extraction step should also return a structured visible wear assessment for wardrobe-relevant categories.
+
+The wear assessment must:
+- only describe wear that is visibly supported by the provided image(s)
+- use lower confidence when the image quality is poor or important zones are not visible
+- avoid guessing hidden condition issues
+- avoid inferring age, wash history, odor, softness loss, or invisible defects
+
+Required fields:
+- wear_level
+- wear_confidence
+- wear_summary
+- pricing_adjustment_factor
+- wear_signals
+
+If wear cannot be assessed confidently:
+- return `unknown` or equivalent conservative output
+- avoid strong pricing penalties
 
 ## OpenAI Listing Generation Requirements
 The listing generator must produce:
@@ -643,6 +706,9 @@ Review, edit, and mock marketplace publish
 
 ## Phase 8
 Inventory, listing tracking, camera capture, and polish
+
+## Phase 9
+Wardrobe wear detection and wear-aware resale
 
 ---
 
