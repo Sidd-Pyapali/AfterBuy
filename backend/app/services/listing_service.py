@@ -19,25 +19,177 @@ class ListingOutput(BaseModel):
     condition_note: str
 
 
-_SYSTEM_PROMPT = """You are an expert at writing secondhand marketplace listings.
+_SYSTEM_PROMPT = """You are an expert at writing factual, resale-ready marketplace listings for platforms like eBay, Poshmark, and Facebook Marketplace.
 
-Write clean, factual, resale-ready listing content based only on the provided item details.
+## Title rules
+- Under 80 characters, Title Case
+- Pattern: Brand + Item Type + Color or Key Feature
+  Good: "The North Face Full Zip Fleece Jacket Black", "Hydro Flask Standard Mouth Water Bottle"
+  Bad: "Amazing jacket perfect for winter", "Rare vintage item must see"
+- Do not include price, condition, or size in the title
+- Do not invent model numbers, SKUs, collection names, or season names
+- If brand is unknown, use descriptive words only
 
-Rules:
-- Title: under 80 characters, Title Case, suitable for eBay / Poshmark / Depop
-- Description: 2 to 4 sentences, factual, neutral tone
-- Condition note: 1 sentence honestly describing the item's condition
-- Do NOT invent measurements, exact materials, model numbers, or authenticity details
-- Do NOT use hype language ("rare", "must-see", "amazing deal")
-- Do NOT include a price in the title or description
-- Do NOT fabricate collection names, seasons, or SKUs
-- If metadata is sparse, write conservatively based only on what is provided
-- Tone: clean and neutral, as if written by a careful human seller"""
+## Description rules
+- 2 to 4 sentences
+- Structure: brief factual overview → condition → note to see photos
+- Neutral, honest tone — written as a careful human seller would
+- No invented measurements, exact materials, or specifications not provided
+- No hype language ("amazing", "rare", "incredible deal")
+- Do not repeat the title verbatim
+
+## Condition note rules
+- 1 to 2 sentences, honest and specific
+- Describe visible condition accurately (e.g. "Shows light pilling on cuffs" vs just "Used")
+- If condition info is limited, write a conservative general note
+- Do not overclaim ("pristine", "perfect") unless condition strongly supports it"""
 
 
-def generate_listing(item: dict, valuation: dict | None) -> dict:
-    client = _get_client()
+# Category detection ──────────────────────────────────────────────────────────
 
+_APPAREL_TOKENS = {
+    "jacket", "coat", "hoodie", "hooded", "shirt", "pants", "dress", "sweater",
+    "top", "blouse", "shorts", "skirt", "vest", "pullover", "tee", "cardigan",
+    "blazer", "trench", "parka", "fleece", "windbreaker", "outerwear", "apparel",
+    "clothing", "wear", "sweatshirt", "anorak", "shell", "raincoat",
+}
+
+_DRINKWARE_TOKENS = {
+    "bottle", "tumbler", "flask", "mug", "cup", "thermos", "drinkware",
+    "canteen", "jug", "hydro", "contigo", "yeti", "stanley",
+}
+
+_BAGS_TOKENS = {
+    "bag", "backpack", "purse", "tote", "handbag", "wallet", "clutch",
+    "satchel", "duffel", "crossbody", "messenger", "briefcase", "pouch",
+}
+
+_FOOTWEAR_TOKENS = {
+    "shoe", "shoes", "boot", "boots", "sneaker", "sneakers", "sandal",
+    "loafer", "heel", "heels", "footwear", "kicks",
+}
+
+_ELECTRONICS_TOKENS = {
+    "phone", "laptop", "tablet", "camera", "iphone", "macbook", "ipad",
+    "computer", "electronics", "headphone", "earbuds", "speaker",
+    "console", "gaming", "keyboard", "mouse", "monitor",
+}
+
+
+def _detect_category_key(item: dict) -> str:
+    tokens: set[str] = set()
+    for field in ("category", "item_type", "title_guess"):
+        val = (item.get(field) or "").lower()
+        tokens.update(val.split())
+
+    if tokens & _APPAREL_TOKENS:
+        return "apparel"
+    if tokens & _DRINKWARE_TOKENS:
+        return "drinkware"
+    if tokens & _BAGS_TOKENS:
+        return "bags"
+    if tokens & _FOOTWEAR_TOKENS:
+        return "footwear"
+    if tokens & _ELECTRONICS_TOKENS:
+        return "electronics"
+    return "general"
+
+
+# Item specifics ──────────────────────────────────────────────────────────────
+
+def _build_item_specifics(item: dict) -> dict:
+    cat_key = _detect_category_key(item)
+    metadata = item.get("extracted_metadata_json") or {}
+    notable: list[str] = metadata.get("notable_details") or []
+    notable_lower = [n.lower() for n in notable]
+
+    base: dict[str, str | None] = {
+        "Brand": item.get("brand"),
+        "Category": item.get("category"),
+        "Type": item.get("item_type"),
+        "Color": item.get("color"),
+        "Condition": item.get("condition"),
+    }
+
+    # Category-specific extras extracted conservatively from notable_details
+    if cat_key == "drinkware":
+        materials = ("stainless", "plastic", "aluminum", "ceramic", "glass", "titanium")
+        for nl, n in zip(notable_lower, notable):
+            if any(m in nl for m in materials):
+                base["Material"] = n
+                break
+
+    elif cat_key == "apparel":
+        closures = ("full zip", "half zip", "button", "snap", "velcro", "hook")
+        for nl, n in zip(notable_lower, notable):
+            if any(c in nl for c in closures):
+                base["Closure"] = n
+                break
+
+    # Strip null and empty values
+    return {k: v for k, v in base.items() if v and str(v).strip()}
+
+
+# Photo checklist ─────────────────────────────────────────────────────────────
+
+_PHOTO_CHECKLISTS: dict[str, list[str]] = {
+    "apparel": [
+        "Front view",
+        "Back view",
+        "Logo or branding close-up",
+        "Tag or label",
+        "Zipper or pocket detail",
+        "Any wear or flaws",
+    ],
+    "drinkware": [
+        "Front view",
+        "Back view",
+        "Lid or opening close-up",
+        "Branding close-up",
+        "Bottom or base",
+        "Any dents, scratches, or wear",
+    ],
+    "bags": [
+        "Front view",
+        "Back view",
+        "Interior",
+        "Strap or handle close-up",
+        "Hardware close-up",
+        "Corner wear or flaws",
+    ],
+    "footwear": [
+        "Side profile (both shoes)",
+        "Top-down view",
+        "Sole",
+        "Toe box",
+        "Heel",
+        "Brand label or tag",
+        "Any wear or flaws",
+    ],
+    "electronics": [
+        "Front view",
+        "Back view",
+        "Ports and buttons",
+        "Screen or display",
+        "Branding close-up",
+        "Any damage or wear",
+    ],
+    "general": [
+        "Front view",
+        "Back view",
+        "Branding close-up",
+        "Any wear or flaws",
+    ],
+}
+
+
+def _build_photo_checklist(category_key: str) -> list[str]:
+    return _PHOTO_CHECKLISTS.get(category_key, _PHOTO_CHECKLISTS["general"])
+
+
+# Context builder ─────────────────────────────────────────────────────────────
+
+def _build_listing_context(item: dict, valuation: dict | None) -> str:
     parts: list[str] = []
     for field, label in [
         ("brand", "Brand"),
@@ -61,7 +213,16 @@ def generate_listing(item: dict, valuation: dict | None) -> dict:
         if price:
             parts.append(f"Suggested listing price: ${price:.0f}")
 
-    item_context = "\n".join(parts) if parts else "Limited item information available."
+    return "\n".join(parts) if parts else "Limited item information available."
+
+
+# Main entry point ────────────────────────────────────────────────────────────
+
+def generate_listing(item: dict, valuation: dict | None) -> dict:
+    client = _get_client()
+
+    item_context = _build_listing_context(item, valuation)
+    cat_key = _detect_category_key(item)
 
     prompt = (
         "Generate a marketplace listing for the following item:\n\n"
@@ -94,4 +255,6 @@ def generate_listing(item: dict, valuation: dict | None) -> dict:
         "color": item.get("color"),
         "condition": item.get("condition"),
     }
+    result["item_specifics"] = _build_item_specifics(item)
+    result["photo_checklist"] = _build_photo_checklist(cat_key)
     return result

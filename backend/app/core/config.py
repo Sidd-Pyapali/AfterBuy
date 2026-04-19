@@ -26,6 +26,12 @@ SUPABASE_STORAGE_BUCKET: str = _optional("SUPABASE_STORAGE_BUCKET", "item-images
 OPENAI_API_KEY: str = _optional("OPENAI_API_KEY")
 SERPAPI_API_KEY: str = _optional("SERPAPI_API_KEY")
 
+# Comma-separated list of allowed CORS origins.
+# Default covers local desktop dev. Add LAN IP origin here for phone testing.
+# Example: CORS_ORIGINS=http://localhost:3000,http://192.168.1.42:3000
+_cors_raw: str = _optional("CORS_ORIGINS", "http://localhost:3000")
+CORS_ORIGINS: list[str] = [o.strip() for o in _cors_raw.split(",") if o.strip()]
+
 
 def require_supabase() -> None:
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:

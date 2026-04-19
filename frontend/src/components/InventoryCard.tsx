@@ -12,10 +12,10 @@ const STATUS_CONFIG: Record<
   InventoryItem["listing_status"],
   { label: string; className: string }
 > = {
-  distributed: { label: "Distributed", className: "bg-green-50 text-green-700" },
-  listed: { label: "Listing ready", className: "bg-blue-50 text-blue-700" },
+  distributed: { label: "Distributed", className: "bg-emerald-50 text-emerald-700" },
+  listed: { label: "Listing ready", className: "bg-sky-50 text-sky-700" },
   valued: { label: "Valued", className: "bg-amber-50 text-amber-700" },
-  identified: { label: "Identified", className: "bg-zinc-100 text-zinc-500" },
+  identified: { label: "Identified", className: "bg-zinc-100 text-zinc-400" },
 };
 
 function fmt(value: number) {
@@ -34,9 +34,9 @@ export default function InventoryCard({ item }: { item: InventoryItem }) {
 
   return (
     <Link href={`/item/${item.id}`} className="block group">
-      <div className="flex gap-3 items-start py-4 border-b border-zinc-100 last:border-0">
+      <div className="flex gap-3.5 items-start py-4 border-b border-zinc-100 last:border-0">
         {/* Thumbnail */}
-        <div className="shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-zinc-100">
+        <div className="shrink-0 w-[60px] h-[60px] rounded-xl overflow-hidden bg-zinc-100">
           {item.image_url ? (
             <img
               src={item.image_url}
@@ -44,7 +44,7 @@ export default function InventoryCard({ item }: { item: InventoryItem }) {
               className="w-full h-full object-cover group-hover:opacity-90 transition-opacity"
             />
           ) : (
-            <div className="w-full h-full bg-zinc-200" />
+            <div className="w-full h-full bg-zinc-100" />
           )}
         </div>
 
@@ -59,7 +59,7 @@ export default function InventoryCard({ item }: { item: InventoryItem }) {
 
           <div className="mt-2 flex items-center gap-2 flex-wrap">
             <span
-              className={`text-xs font-medium px-2 py-0.5 rounded-full ${status.className}`}
+              className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${status.className}`}
             >
               {status.label}
             </span>
@@ -76,7 +76,7 @@ export default function InventoryCard({ item }: { item: InventoryItem }) {
         {/* Price */}
         <div className="shrink-0 text-right">
           {item.valuation_mid != null ? (
-            <p className="text-sm font-semibold text-zinc-900">
+            <p className="text-sm font-semibold text-primary">
               {fmt(item.valuation_mid)}
             </p>
           ) : (

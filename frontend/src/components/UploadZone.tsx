@@ -122,8 +122,8 @@ export default function UploadZone() {
         onClick={() => !isProcessing && inputRef.current?.click()}
         disabled={isProcessing}
         className={[
-          "w-full rounded-2xl border-2 border-dashed transition-colors text-left",
-          preview ? "border-zinc-200 p-2" : "border-zinc-300 p-8",
+          "w-full rounded-2xl border border-dashed transition-colors text-left bg-white",
+          preview ? "border-zinc-200 p-2" : "border-zinc-200 p-10",
           isProcessing
             ? "cursor-default opacity-80"
             : "hover:border-zinc-400 cursor-pointer",
@@ -133,15 +133,15 @@ export default function UploadZone() {
           <img
             src={preview}
             alt="Selected item"
-            className="w-full rounded-xl object-cover max-h-72"
+            className="w-full rounded-xl object-cover max-h-80"
           />
         ) : (
           <div className="flex flex-col items-center gap-3 text-zinc-400">
-            <ImagePlus className="w-8 h-8" />
-            <span className="text-sm font-medium text-zinc-500">
+            <ImagePlus className="w-7 h-7 text-zinc-300" />
+            <span className="text-sm font-medium text-zinc-400">
               Tap to select a photo
             </span>
-            <span className="text-xs">JPEG · PNG · WebP</span>
+            <span className="text-xs text-zinc-300">JPEG · PNG · WebP</span>
           </div>
         )}
       </button>
@@ -165,8 +165,8 @@ export default function UploadZone() {
 
       {/* Loading indicator */}
       {isProcessing && (
-        <div className="flex items-center justify-center gap-2 text-zinc-500 text-sm py-1">
-          <Loader2 className="w-4 h-4 animate-spin" />
+        <div className="flex items-center justify-center gap-2 text-zinc-400 text-sm py-1">
+          <Loader2 className="w-4 h-4 animate-spin text-primary" />
           <span>{STAGE_LABEL[stage as "uploading" | "identifying" | "finding_comps" | "estimating_value" | "generating_listing"]}</span>
         </div>
       )}

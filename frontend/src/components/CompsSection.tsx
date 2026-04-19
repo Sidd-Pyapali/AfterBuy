@@ -16,10 +16,10 @@ function CompCard({ comp }: { comp: Comp }) {
       href={comp.url || "#"}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex gap-3 p-3 rounded-xl bg-zinc-50 hover:bg-zinc-100 transition-colors"
+      className="flex gap-3 p-3.5 rounded-xl bg-white border border-zinc-100 hover:border-zinc-200 transition-colors"
     >
       {/* Thumbnail */}
-      <div className="shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-zinc-200">
+      <div className="shrink-0 w-16 h-16 rounded-lg overflow-hidden bg-zinc-100">
         {comp.image_url ? (
           <img
             src={comp.image_url}
@@ -27,19 +27,19 @@ function CompCard({ comp }: { comp: Comp }) {
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-zinc-400 text-xs">
-            No img
+          <div className="w-full h-full flex items-center justify-center text-zinc-300 text-xs">
+            —
           </div>
         )}
       </div>
 
       {/* Details */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-zinc-900 line-clamp-2 leading-snug">
+        <p className="text-sm font-medium text-zinc-800 line-clamp-2 leading-snug">
           {comp.title}
         </p>
-        <div className="mt-1 flex items-center gap-2">
-          <span className="text-sm font-semibold text-zinc-900">
+        <div className="mt-1.5 flex items-center gap-2">
+          <span className="text-sm font-semibold text-primary">
             {formatPrice(comp.price, comp.currency)}
           </span>
           {comp.condition && (
@@ -69,8 +69,8 @@ export default function CompsSection({
       confidenceScore !== null && confidenceScore < COMP_SEARCH_MIN_CONFIDENCE;
 
     return (
-      <div className="mt-8">
-        <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-3">
+      <div className="mt-10">
+        <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3">
           Market Comparables
         </p>
         <div className="rounded-2xl border border-dashed border-zinc-200 p-6 text-center">
@@ -87,11 +87,11 @@ export default function CompsSection({
   const displayComps = comps.slice(0, 6);
 
   return (
-    <div className="mt-8">
-      <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-3">
+    <div className="mt-10">
+      <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3">
         Market Comparables
-        <span className="ml-2 normal-case font-normal">
-          ({comps.length} found)
+        <span className="ml-2 normal-case font-normal text-zinc-300">
+          {comps.length} found
         </span>
       </p>
       <div className="flex flex-col gap-2">

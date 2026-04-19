@@ -33,10 +33,10 @@ export default async function ItemPage({
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen">
       <div className="mx-auto w-full max-w-md px-5 py-6 pb-16">
         {/* Header */}
-        <div className="flex items-center mb-6">
+        <div className="flex items-center mb-8">
           <Link
             href="/"
             className="flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-600 transition-colors"
@@ -44,7 +44,7 @@ export default async function ItemPage({
             <ChevronLeft className="w-4 h-4" />
             New item
           </Link>
-          <span className="mx-auto text-xs font-semibold tracking-widest text-zinc-400 uppercase">
+          <span className="mx-auto font-display text-lg text-primary tracking-wide">
             AfterBuy
           </span>
           <Link
@@ -80,7 +80,7 @@ export default async function ItemPage({
         ) : null}
 
         {/* Bottom CTAs */}
-        <div className="mt-12 flex items-center justify-center gap-6">
+        <div className="mt-14 flex items-center justify-center gap-8">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-sm font-medium text-zinc-400 hover:text-zinc-700 transition-colors"

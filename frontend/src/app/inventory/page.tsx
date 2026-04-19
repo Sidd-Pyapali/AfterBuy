@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { ChevronLeft, ImagePlus } from "lucide-react";
 import InventoryCard from "@/components/InventoryCard";
-import { getItems } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -24,10 +23,10 @@ export default async function InventoryPage() {
   const items = await fetchItems();
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen">
       <div className="mx-auto w-full max-w-md px-5 py-6 pb-16">
         {/* Header */}
-        <div className="flex items-center mb-6">
+        <div className="flex items-center justify-between mb-8">
           <Link
             href="/"
             className="flex items-center gap-1 text-sm text-zinc-400 hover:text-zinc-600 transition-colors"
@@ -35,17 +34,18 @@ export default async function InventoryPage() {
             <ChevronLeft className="w-4 h-4" />
             Home
           </Link>
-          <span className="ml-auto text-xs font-semibold tracking-widest text-zinc-400 uppercase">
+          <span className="font-display text-lg text-primary tracking-wide">
             AfterBuy
           </span>
+          <div className="w-12" />
         </div>
 
         {/* Page title */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+        <div className="mb-8">
+          <h1 className="font-display text-3xl text-zinc-900">
             Your items
           </h1>
-          <p className="text-sm text-zinc-400 mt-1">
+          <p className="text-[15px] text-zinc-400 mt-2 leading-relaxed">
             Everything you&apos;ve analyzed and prepared for resale.
           </p>
         </div>

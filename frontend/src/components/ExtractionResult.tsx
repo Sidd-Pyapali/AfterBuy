@@ -2,9 +2,9 @@ import { Item } from "@/lib/api";
 
 function confidenceLabel(score: number | null): { text: string; className: string } {
   const n = score ?? 0;
-  if (n >= 0.75) return { text: "High confidence", className: "text-green-700 bg-green-50" };
+  if (n >= 0.75) return { text: "High confidence", className: "text-emerald-700 bg-emerald-50" };
   if (n >= 0.5) return { text: "Medium confidence", className: "text-amber-700 bg-amber-50" };
-  return { text: "Low confidence", className: "text-red-700 bg-red-50" };
+  return { text: "Low confidence", className: "text-rose-700 bg-rose-50" };
 }
 
 export default function ExtractionResult({ item }: { item: Item }) {
@@ -26,7 +26,7 @@ export default function ExtractionResult({ item }: { item: Item }) {
       <img
         src={item.image_url}
         alt={item.title_guess ?? "Your item"}
-        className="w-full rounded-2xl object-cover max-h-80"
+        className="w-full rounded-2xl object-cover max-h-80 shadow-sm"
       />
 
       {/* Title and confidence */}
@@ -43,10 +43,10 @@ export default function ExtractionResult({ item }: { item: Item }) {
 
       {/* Attribute grid */}
       {attributes.length > 0 && (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2.5">
           {attributes.map((attr) => (
-            <div key={attr.label} className="bg-zinc-50 rounded-xl px-4 py-3">
-              <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-1">
+            <div key={attr.label} className="bg-white border border-zinc-100 rounded-xl px-4 py-3">
+              <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-1">
                 {attr.label}
               </p>
               <p className="text-sm font-medium text-zinc-900 capitalize">{attr.value}</p>
@@ -58,14 +58,14 @@ export default function ExtractionResult({ item }: { item: Item }) {
       {/* Notable details */}
       {notableDetails.length > 0 && (
         <div>
-          <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-2">
+          <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-2.5">
             Details
           </p>
           <ul className="flex flex-wrap gap-2">
             {notableDetails.map((detail, i) => (
               <li
                 key={i}
-                className="text-sm text-zinc-600 bg-zinc-100 rounded-lg px-3 py-1.5"
+                className="text-sm text-zinc-600 bg-white border border-zinc-100 rounded-full px-3.5 py-1.5"
               >
                 {detail}
               </li>

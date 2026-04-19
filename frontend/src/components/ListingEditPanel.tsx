@@ -109,8 +109,8 @@ export default function ListingEditPanel({
   };
 
   return (
-    <div className="mt-6">
-      <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-3">
+    <div className="mt-8">
+      <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3">
         Review &amp; Distribute
       </p>
 
@@ -216,12 +216,12 @@ export default function ListingEditPanel({
         {/* Already-published platforms */}
         {publications.length > 0 && (
           <div className="px-5 py-4 bg-white border-b border-zinc-100">
-            <p className="text-xs text-zinc-400 mb-2">Distributed to</p>
+            <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-2">Distributed to</p>
             <div className="flex flex-wrap gap-2">
               {publications.map((pub) => (
                 <span
                   key={pub.id}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-green-50 text-green-700"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1 rounded-full bg-emerald-50 text-emerald-700"
                 >
                   <Check className="w-3 h-3" />
                   {MARKETPLACES.find((m) => m.id === pub.platform)?.label ?? pub.platform}
@@ -234,7 +234,7 @@ export default function ListingEditPanel({
         {/* Platform selector */}
         {availablePlatforms.length > 0 && (
           <div className="px-5 py-5 bg-white">
-            <p className="text-xs text-zinc-400 mb-3">
+            <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3">
               {publications.length > 0 ? "Add more channels" : "Distribute to"}
             </p>
 
@@ -248,8 +248,8 @@ export default function ListingEditPanel({
                     className={[
                       "px-3 py-2.5 rounded-xl border text-sm font-medium transition-colors",
                       selected
-                        ? "border-zinc-900 bg-zinc-900 text-white"
-                        : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-400",
+                        ? "border-primary bg-primary text-white"
+                        : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300",
                     ].join(" ")}
                   >
                     {m.label}

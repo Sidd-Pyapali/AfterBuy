@@ -196,6 +196,8 @@ def _serialize_listing(db_listing: dict) -> dict:
         "condition_note": db_listing["condition_note"],
         "suggested_price": db_listing["suggested_price"],
         "attributes": db_listing.get("attributes_json"),
+        "item_specifics": db_listing.get("item_specifics_json"),
+        "photo_checklist": db_listing.get("photo_checklist_json"),
     }
 
 

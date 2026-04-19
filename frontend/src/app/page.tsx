@@ -4,12 +4,12 @@ import UploadZone from "@/components/UploadZone";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-white flex flex-col">
+    <main className="min-h-screen flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center px-5 py-12">
         <div className="w-full max-w-md">
           {/* Wordmark + nav */}
-          <div className="flex items-center justify-between mb-10">
-            <span className="text-xs font-semibold tracking-widest text-zinc-400 uppercase">
+          <div className="flex items-center justify-between mb-12">
+            <span className="font-display text-xl text-primary tracking-wide">
               AfterBuy
             </span>
             <Link
@@ -23,10 +23,10 @@ export default function HomePage() {
 
           {/* Hero */}
           <div className="mb-10 text-center">
-            <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 leading-tight">
+            <h1 className="font-display text-4xl text-zinc-900 leading-tight">
               Find out what your<br />item is worth
             </h1>
-            <p className="mt-3 text-sm text-zinc-500 leading-relaxed max-w-xs mx-auto">
+            <p className="mt-4 text-[15px] text-zinc-500 leading-relaxed max-w-xs mx-auto">
               Upload or photograph an item you own. We&apos;ll identify it, find
               comparable listings, and build a marketplace-ready resale listing.
             </p>
