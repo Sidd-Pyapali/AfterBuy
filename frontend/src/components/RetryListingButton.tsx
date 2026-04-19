@@ -26,28 +26,28 @@ export default function RetryListingButton({ itemId }: { itemId: string }) {
   };
 
   return (
-    <div className="mt-8">
-      <p className="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-3">
+    <div className="mt-10">
+      <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest mb-3">
         Generated Listing
       </p>
-      <div className="rounded-2xl border border-dashed border-zinc-200 p-6 flex flex-col items-center gap-3 text-center">
+      <div className="rounded-2xl border border-zinc-200 p-6 flex flex-col items-center gap-3 text-center">
         {error ? (
           <>
-            <p className="text-sm text-red-500">{error}</p>
+            <p className="text-sm text-rose-500">{error}</p>
             <Button onClick={handleGenerate} disabled={loading} variant="outline" className="text-sm">
               Try again
             </Button>
           </>
         ) : (
           <>
-            <p className="text-sm text-zinc-400">
-              Listing wasn&apos;t generated automatically. Generate it now.
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Your item is valued. Tap below to generate a<br />marketplace-ready listing.
             </p>
-            <Button onClick={handleGenerate} disabled={loading} className="text-sm">
+            <Button onClick={handleGenerate} disabled={loading} className="text-sm mt-1">
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Generating...
+                  Generating listing…
                 </>
               ) : (
                 <>
