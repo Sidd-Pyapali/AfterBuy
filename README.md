@@ -5,7 +5,7 @@ AfterBuy is a mobile-first AI wardrobe resale agent for post-purchase commerce.
 Upload or photograph something you own. AfterBuy identifies the item, estimates visible wear from the provided images, finds comparable market listings, adjusts resale value accordingly, generates a marketplace-ready listing, and lets you distribute it across selected channels — all in one flow.
 
 ## Demo Video
-[![Watch the demo](https://img.youtube.com/vi/dyWOPRP8p90/maxresdefault.jpg)](https://youtu.be/dyWOPRP8p90?si=LzaobKKVpE3TPyZa)
+[![Watch the demo](https://img.youtube.com/vi/dyWOPRP8p90/hqdefault.jpg)](https://youtu.be/dyWOPRP8p90?si=LzaobKKVpE3TPyZa)
 
 **Core flow:**
 photo upload or camera capture → item extraction + visible wear assessment → market comparables → wear-aware resale valuation → generated listing → review/edit → channel distribution → inventory tracking
