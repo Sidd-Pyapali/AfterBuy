@@ -212,24 +212,6 @@ Avoid: generic unbranded items, low-resolution images, images without a clear su
 
 ---
 
-## What is real vs simulated
-
-| Feature | Status |
-|---|---|
-| Image upload and storage | Real — Supabase Storage |
-| Item extraction (brand, type, color, condition) | Real — OpenAI GPT-4o vision |
-| Market comparable listings | Real — SerpApi Google Shopping |
-| Valuation engine | Real computation — weighted comp heuristic with IQR outlier removal |
-| Listing generation | Real — OpenAI GPT-4o |
-| Listing edit and persistence | Real — saved to Supabase |
-| Channel distribution | Simulated — mock publication record per platform; no real marketplace API calls |
-| Inventory tracking | Real — reads from persisted item and publication records |
-| Visible wear assessment | Real — OpenAI GPT-4o vision; structured per-zone signals with severity + confidence scores; pricing adjustment applied conservatively in backend |
-
-The distribution flow is intentionally simulated. Real marketplace publishing (eBay, Poshmark, etc.) requires seller account OAuth — out of scope for this MVP. The in-app copy reflects this honestly: "Listing routing is simulated for selected channels."
-
----
-
 ## API Overview
 
 | Endpoint | Purpose |
@@ -246,22 +228,3 @@ The distribution flow is intentionally simulated. Real marketplace publishing (e
 | `GET /items` | Return inventory list |
 
 ---
-
-## Known Limitations
-
-- **No authentication** — all items are shared in the same database. Fine for a single-user demo.
-- **SerpApi dependency** — if quota is exhausted or the key is invalid, comps return empty and valuation/listing will not run.
-- **Camera capture** requires HTTPS or localhost. Use a deployed URL or tunnel for reliable phone camera access.
-- **Low-confidence items** — blurry, generic, or unbranded images may return low-confidence extraction and skip comps and valuation. This is intentional graceful degradation.
-- **Channel distribution is simulated** — no real listings are created on any marketplace.
-- **Visible wear is image-based only** — AfterBuy estimates visible wear from the provided photos. It does not know hidden defects, odor, wash history, elasticity loss, or internal condition.
-
----
-
-## Project Docs
-
-- [PLAN.md](PLAN.md) — product scope and architecture
-- [TASKS.md](TASKS.md) — implementation phases and task list
-- [TESTS.md](TESTS.md) — test and verification strategy
-- [API_SPEC.md](API_SPEC.md) — backend API contract
-- [CLAUDE.md](CLAUDE.md) — implementation rules
